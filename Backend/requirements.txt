@@ -1,0 +1,9 @@
+dotenv
+fastapi
+uvicorn
+google-genai
+psycopg-binary 
+SQLAlchemy
+psycopg[binary]
+alembic
+pydantic-settings
