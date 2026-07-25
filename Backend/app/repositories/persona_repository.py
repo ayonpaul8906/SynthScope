@@ -16,3 +16,27 @@ def create_persona(db: Session, persona: PersonaCreate) -> Persona:
     db.refresh(db_persona)
 
     return db_persona
+
+
+def create_personas(db: Session, personas: list[PersonaCreate]) -> list[Persona]:
+    """
+    Create and save multiple personas to the database.
+    """
+
+    db_personas = [Persona(**persona.model_dump()) for persona in personas]
+
+    db.add_all(db_personas)
+    db.commit()
+
+    for db_persona in db_personas:
+        db.refresh(db_persona)
+
+    return db_personas
+
+
+def get_all_personas(db: Session) -> list[Persona]:
+    """
+    Fetch all personas stored in the database.
+    """
+
+    return db.query(Persona).all()

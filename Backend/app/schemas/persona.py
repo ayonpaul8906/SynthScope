@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional
 from uuid import UUID
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PersonaBase(BaseModel):
@@ -63,7 +63,13 @@ class PersonaCreate(PersonaBase):
     pass
 
 class ProductRequest(BaseModel):
-    product: str
+    product_name: Optional[str] = None
+    industry: Optional[str] = None
+    product_description: Optional[str] = None
+    target_audience: Optional[str] = None
+    research_objective: Optional[str] = None
+    persona_count: int = Field(default=10, ge=1)
+    product: Optional[str] = None
 
 class PersonaResponse(PersonaBase):
     id: UUID

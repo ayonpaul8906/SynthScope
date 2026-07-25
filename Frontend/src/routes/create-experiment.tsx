@@ -1,9 +1,61 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Loader2, Sparkles, Settings, Users, Eye, Terminal, ShieldCheck } from "lucide-react";
 import { industries, goals, personas } from "@/data/personas";
 import { PremiumAvatar } from "@/lib/avatar";
+
+type GeneratedPersona = {
+  id: string;
+  name: string;
+  age: number;
+  gender: string;
+  city: string;
+  country: string;
+  occupation: string;
+  education: string;
+  annual_income: string;
+  marital_status: string;
+  persona_summary: string;
+  lifestyle: string;
+  hobbies: string[];
+  daily_routine: string[];
+  technology_usage: string;
+  digital_literacy: string;
+  fitness_level: string;
+  goals: string[];
+  motivations: string[];
+  pain_points: string[];
+  frustrations: string[];
+  preferred_features: string[];
+  budget: string;
+  purchase_channel: string;
+  purchase_frequency: string;
+  brand_loyalty: string;
+  devices: string[];
+  operating_system: string;
+  ecosystem: string;
+  favourite_apps: string[];
+  personality: {
+    traits: string[];
+    communication_style: string;
+    decision_making: string;
+    description: string;
+  };
+  buying_behaviour: {
+    price_sensitivity: string;
+    decision_factor: string;
+    purchase_trigger: string;
+    description: string;
+  };
+  accessibility_needs?: string | null;
+  environmental_awareness?: string | null;
+  quote: string;
+};
+
+const GENERATED_PERSONAS_STORAGE_KEY = "synthscope.generated-personas";
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const PERSONA_GENERATION_ENDPOINT = `${API_BASE_URL.replace(/\/$/, "")}/personas/generate`;
 
 export const Route = createFileRoute("/create-experiment")({
   component: CreateExperiment,
@@ -28,6 +80,7 @@ function CreateExperiment() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [activeLogIndex, setActiveLogIndex] = useState(-1);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     productName: "Nimbus Notes",
     description: "A collaborative AI note-taking app for research teams.",
@@ -39,14 +92,46 @@ function CreateExperiment() {
 
   const previewPersonas = personas.slice(0, form.count);
 
-  const startSynthesis = async (e: React.FormEvent) => {
+  const startSynthesis = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+
+    const requestPromise = fetch(PERSONA_GENERATION_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        product_name: form.productName,
+        industry: form.industry,
+        product_description: form.description,
+        target_audience: form.audience,
+        research_objective: form.goal,
+        persona_count: form.count,
+      }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail ?? "Failed to generate personas.");
+      }
+
+      return (await response.json()) as GeneratedPersona[];
+    });
+
     for (let i = 0; i < logLines.length; i++) {
       setActiveLogIndex(i);
       await new Promise((r) => setTimeout(r, 600));
     }
-    navigate({ to: "/personas" });
+
+    try {
+      const generatedPersonas = await requestPromise;
+      sessionStorage.setItem(GENERATED_PERSONAS_STORAGE_KEY, JSON.stringify(generatedPersonas));
+      navigate({ to: "/personas" });
+    } catch (requestError) {
+      setLoading(false);
+      setError(requestError instanceof Error ? requestError.message : "Failed to generate personas.");
+    }
   };
 
   return (
@@ -198,6 +283,12 @@ function CreateExperiment() {
                   )}
                 </button>
               </div>
+
+              {error && (
+                <p className="mt-4 text-[10px] font-mono text-rose-400">
+                  {error}
+                </p>
+              )}
             </form>
 
             <AnimatePresence>

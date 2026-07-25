@@ -6,22 +6,11 @@ import time
 from dotenv import load_dotenv
 from google import genai
 
-from sqlalchemy.orm import Session
-
-from app.repositories.persona_repository import create_personas, get_all_personas as fetch_all_personas
-from app.schemas.persona import PersonaCreate
 from app.schemas.survey import GeneratedQuestion, QuestionGenerateResponse
 
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-def get_all_personas(db: Session):
-    """
-    Fetch all personas stored in the database.
-    """
-    return fetch_all_personas(db)
-
 
 QUESTION_GEMINI_MODELS = [
     m.strip() for m in os.getenv(
@@ -159,16 +148,3 @@ Return JSON in this exact format:
         research_objective=research_objective,
         questions=fallback[:question_count],
     )
-
-
-def save_generated_personas(db, personas):
-    """
-    Normalize generated persona payloads and persist them.
-    """
-
-    normalized_personas = [
-        persona if isinstance(persona, PersonaCreate) else PersonaCreate(**persona)
-        for persona in personas
-    ]
-
-    return create_personas(db, normalized_personas)
