@@ -1,53 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, MapPin, Sparkles, MessageSquare, ClipboardList, ArrowRight, X, Compass, Layers, ShieldCheck, Heart, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { type Persona } from "@/data/personas";
+import { Search, Filter, MapPin, MessageSquare, ClipboardList, ArrowRight, X, Compass, Heart, Loader2, ChevronRight, Briefcase, GraduationCap, IndianRupee } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { PremiumAvatar } from "@/lib/avatar";
+import { getAuthHeaders } from "@/lib/api-headers";
 
 export const Route = createFileRoute("/personas")({
   component: PersonasPage,
-  head: () => ({ meta: [{ title: "Synthetic Panel — SynthScope" }] }),
+  head: () => ({ meta: [{ title: "Virtual Panel — SynthScope" }] }),
 });
-
-type GeneratedPersona = {
-  id: string;
-  name: string;
-  age: number;
-  gender: string;
-  city: string;
-  country: string;
-  occupation: string;
-  persona_summary: string;
-  technology_usage: string;
-  goals: string[];
-  frustrations: string[];
-  preferred_features: string[];
-  personality: {
-    traits: string[];
-    communication_style: string;
-    decision_making: string;
-    description: string;
-  };
-  quote: string;
-};
-
-type PanelPersona = {
-  id: string;
-  name: string;
-  age: number;
-  occupation: string;
-  personality: string[];
-  goals: string[];
-  frustrations: string[];
-  tech: string;
-  interests: string[];
-  location: string;
-  sentiment: Persona["sentiment"];
-  summary: string;
-  quote: string;
-  source: "seeded" | "generated";
-};
 
 type BackendPersona = {
   id: string;
@@ -95,90 +56,45 @@ type BackendPersona = {
     purchase_trigger: string;
     description: string;
   };
+  sentiment_archetype?: string;
 };
 
-const GENERATED_PERSONAS_STORAGE_KEY = "synthscope.generated-personas";
+type SentimentKey = "all" | "positive" | "neutral" | "negative" | "skeptic" | "mixed";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const PERSONAS_ENDPOINT = `${API_BASE_URL.replace(/\/$/, "")}/personas`;
 
-function deriveSentiment(goalsList: string[], frustrationsList: string[]): Persona["sentiment"] {
-  if (frustrationsList.length > goalsList.length) {
-    return "negative";
+// Maps sentiment_archetype to a normalized display sentiment
+const ARCHETYPE_MAP: Record<string, { label: string; tone: "positive" | "neutral" | "negative" | "mixed" }> = {
+  champion:   { label: "Champion",   tone: "positive" },
+  enthusiast: { label: "Enthusiast", tone: "positive" },
+  pragmatist: { label: "Pragmatist", tone: "neutral" },
+  skeptic:    { label: "Skeptic",    tone: "neutral" },
+  critic:     { label: "Critic",     tone: "negative" },
+  mixed:      { label: "Mixed",      tone: "mixed" },
+};
+
+function getSentimentStyle(tone: string) {
+  switch (tone) {
+    case "positive":  return { badge: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", dot: "bg-emerald-400" };
+    case "negative":  return { badge: "text-rose-400 bg-rose-500/10 border-rose-500/20", dot: "bg-rose-400" };
+    case "mixed":     return { badge: "text-violet-400 bg-violet-500/10 border-violet-500/20", dot: "bg-violet-400" };
+    default:          return { badge: "text-amber-400 bg-amber-500/10 border-amber-500/20", dot: "bg-amber-400" };
   }
-
-  if (goalsList.length >= frustrationsList.length) {
-    return "positive";
-  }
-
-  return "neutral";
 }
 
-function mapSeedPersona(persona: Persona): PanelPersona {
-  return {
-    id: persona.id,
-    name: persona.name,
-    age: persona.age,
-    occupation: persona.occupation,
-    personality: persona.personality,
-    goals: persona.goals,
-    frustrations: persona.frustrations,
-    tech: persona.tech,
-    interests: persona.interests,
-    location: persona.location,
-    sentiment: persona.sentiment,
-    summary: `${persona.name} is a ${persona.occupation.toLowerCase()} based in ${persona.location}.`,
-    quote: "",
-    source: "seeded",
-  };
-}
-
-function mapBackendPersona(persona: BackendPersona): PanelPersona {
-  const location = [persona.city, persona.country].filter(Boolean).join(", ") || persona.country || persona.city;
-
-  return {
-    id: persona.id,
-    name: persona.name,
-    age: persona.age,
-    occupation: persona.occupation,
-    personality: persona.personality.traits,
-    goals: persona.goals,
-    frustrations: persona.frustrations,
-    tech: persona.technology_usage,
-    interests: persona.preferred_features.length ? persona.preferred_features : persona.favourite_apps,
-    location: location || "Global",
-    sentiment: deriveSentiment(persona.goals, persona.frustrations),
-    summary: persona.persona_summary,
-    quote: persona.quote,
-    source: "generated",
-  };
-}
-
-function mapGeneratedPersona(persona: GeneratedPersona): PanelPersona {
-  const location = [persona.city, persona.country].filter(Boolean).join(", ") || persona.country || persona.city;
-  const interests = persona.preferred_features.length ? persona.preferred_features : persona.goals;
-
-  return {
-    id: persona.id,
-    name: persona.name,
-    age: persona.age,
-    occupation: persona.occupation,
-    personality: persona.personality.traits,
-    goals: persona.goals,
-    frustrations: persona.frustrations,
-    tech: persona.technology_usage,
-    interests,
-    location: location || "Global",
-    sentiment: deriveSentiment(persona.goals, persona.frustrations),
-    summary: persona.persona_summary,
-    quote: persona.quote,
-    source: "generated",
-  };
+// Deterministic fallback sentiment based on persona id + index
+const FALLBACK_ARCHETYPES = ["champion", "pragmatist", "critic", "enthusiast", "skeptic", "mixed"];
+function getFallbackArchetype(persona: BackendPersona, idx: number): string {
+  const hash = persona.id
+    ? persona.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    : 0;
+  return FALLBACK_ARCHETYPES[(idx + (hash % 3)) % FALLBACK_ARCHETYPES.length];
 }
 
 function PersonasPage() {
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
-  const [sentiment, setSentiment] = useState<"all" | Persona["sentiment"]>("all");
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentKey>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [backendPersonas, setBackendPersonas] = useState<BackendPersona[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -188,414 +104,410 @@ function PersonasPage() {
   const handleRunSurvey = async () => {
     setIsRunningSurvey(true);
     try {
-      await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/run-all`, {
-        method: "POST",
-      });
+      const headers = await getAuthHeaders();
+      await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/run-pipeline`, { method: "POST", headers });
       window.location.href = "/survey";
-    } catch (err) {
-      console.error("Run survey error:", err);
+    } catch {
       window.location.href = "/survey";
     }
   };
 
-
   useEffect(() => {
     let active = true;
-
-    const loadPersonas = async () => {
+    const load = async () => {
       setIsLoading(true);
       setLoadError(null);
-
       try {
-        const response = await fetch(PERSONAS_ENDPOINT);
-
-        if (!response.ok) {
-          throw new Error("Failed to load personas from the database.");
-        }
-
-        const data = (await response.json()) as BackendPersona[];
-
+        const headers = await getAuthHeaders();
+        const res = await fetch(PERSONAS_ENDPOINT, { headers });
+        if (!res.ok) throw new Error("Failed to load personas.");
+        const data = (await res.json()) as BackendPersona[];
+        if (active) setBackendPersonas(Array.isArray(data) ? data : []);
+      } catch (err) {
         if (active) {
-          setBackendPersonas(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        if (active) {
-          setLoadError(error instanceof Error ? error.message : "Failed to load personas from the database.");
+          setLoadError(err instanceof Error ? err.message : "Failed to load personas.");
           setBackendPersonas([]);
         }
       } finally {
-        if (active) {
-          setIsLoading(false);
-        }
+        if (active) setIsLoading(false);
       }
     };
-
-    void loadPersonas();
-
-    return () => {
-      active = false;
-    };
+    void load();
+    return () => { active = false; };
   }, []);
 
-  const visiblePersonas = useMemo(() => {
-    const sourcePersonas = backendPersonas.map(mapBackendPersona);
+  // Enrich each persona with a determined sentiment_archetype
+  const enrichedPersonas = useMemo(() =>
+    backendPersonas.map((p, idx) => ({
+      ...p,
+      _archetype: p.sentiment_archetype || getFallbackArchetype(p, idx),
+    })),
+    [backendPersonas]
+  );
 
-    return sourcePersonas.filter((p) => {
-      const matchQ =
-        !q ||
-        [p.name, p.occupation, p.location, p.summary, ...p.interests]
-          .join(" ")
-          .toLowerCase()
-          .includes(q.toLowerCase());
-      const matchS = sentiment === "all" || p.sentiment === sentiment;
+  const visiblePersonas = useMemo(() => {
+    return enrichedPersonas.filter((p) => {
+      const arch = ARCHETYPE_MAP[p._archetype] ?? { label: p._archetype, tone: "neutral" as const };
+      const matchQ = !q || [p.name, p.occupation, p.city, p.country, p.persona_summary]
+        .join(" ").toLowerCase().includes(q.toLowerCase());
+      const matchS = sentimentFilter === "all" || arch.tone === sentimentFilter || p._archetype === sentimentFilter;
       return matchQ && matchS;
     });
-  }, [backendPersonas, q, sentiment]);
+  }, [enrichedPersonas, q, sentimentFilter]);
 
-  const selectedPersona = visiblePersonas.find((p) => p.id === selectedId);
+  const selectedPersona = enrichedPersonas.find((p) => p.id === selectedId);
+
+  // Stats counts
+  const sentimentCounts = useMemo(() => {
+    const counts = { positive: 0, neutral: 0, negative: 0, mixed: 0 };
+    enrichedPersonas.forEach((p) => {
+      const tone = ARCHETYPE_MAP[p._archetype]?.tone ?? "neutral";
+      counts[tone] = (counts[tone] || 0) + 1;
+    });
+    return counts;
+  }, [enrichedPersonas]);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 relative text-[#f2f2f3]">
-      <div className="border-l border-r border-white/[0.02] px-6 sm:px-12 md:px-16">
-        
-        {/* Header */}
-        <div className="mb-10 flex flex-col justify-between gap-4 border-b border-white/[0.03] pb-6 md:flex-row md:items-end">
+    <div className="min-h-screen text-[#ededf0]">
+
+      {/* Page Header */}
+      <div className="mx-auto max-w-7xl px-6 pt-10 pb-6 sm:px-10">
+        <div className="border-b border-white/[0.05] pb-7 flex flex-col md:flex-row md:items-end justify-between gap-5">
           <div>
-            <div className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-[#7f8084] flex items-center gap-2">
+            <p className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#6b6b78] flex items-center gap-2 mb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" />
-              PANEL COHORTS // DATA-V2
-            </div>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white leading-none">
-              Virtual Panel. <span className="font-editor font-light text-[#7f8084]">Active cohorts.</span>
+              VIRTUAL PANEL // SYNTHETIC AGENTS
+            </p>
+            <h1
+              className="text-5xl font-bold uppercase text-white leading-none"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Panel
+              <span className="text-[#6b6b78] ml-3 font-light text-4xl">
+                {backendPersonas.length} agents
+              </span>
             </h1>
           </div>
-          
-          <div className="flex flex-wrap gap-2 text-xs font-mono font-bold">
-            <div className="premium-card flex items-center gap-2 rounded px-3 py-1.5 border border-white/5">
-              <Search className="h-3.5 w-3.5 text-[#7f8084]" />
+
+          {/* Sentiment Distribution badges */}
+          {!isLoading && backendPersonas.length > 0 && (
+            <div className="flex flex-wrap gap-2 text-[9px] font-mono">
+              {(["positive", "neutral", "negative", "mixed"] as const).map((tone) => {
+                const style = getSentimentStyle(tone);
+                return (
+                  <div key={tone} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${style.badge}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+                    {sentimentCounts[tone]} {tone}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      {!isLoading && backendPersonas.length > 0 && (
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 mb-6">
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 premium-card border border-white/[0.05] rounded-lg px-3.5 py-2">
+              <Search className="h-3.5 w-3.5 text-[#6b6b78]" />
               <input
-                placeholder="SEARCH COHORTS..."
+                placeholder="Search personas..."
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                className="w-36 bg-transparent text-[10px] outline-none placeholder:text-[#7f8084] text-white font-mono uppercase"
+                className="bg-transparent text-[10px] outline-none placeholder:text-[#6b6b78] text-white font-mono w-40"
               />
             </div>
-            <div className="premium-card flex items-center gap-2 rounded px-3 py-1.5 border border-white/5">
-              <Filter className="h-3.5 w-3.5 text-[#7f8084]" />
+            <div className="flex items-center gap-2 premium-card border border-white/[0.05] rounded-lg px-3.5 py-2">
+              <Filter className="h-3.5 w-3.5 text-[#6b6b78]" />
               <select
-                value={sentiment}
-                onChange={(e) => setSentiment(e.target.value as typeof sentiment)}
-                className="bg-transparent text-[10px] outline-none text-[#7f8084] font-bold font-mono uppercase"
+                value={sentimentFilter}
+                onChange={(e) => setSentimentFilter(e.target.value as SentimentKey)}
+                className="bg-transparent text-[10px] outline-none text-[#6b6b78] font-mono"
               >
-                <option value="all" className="bg-black">All Sentiments</option>
-                <option value="positive" className="bg-black">Positive Alignment</option>
-                <option value="neutral" className="bg-black">Neutral Stance</option>
-                <option value="negative" className="bg-black">Critical Friction</option>
+                <option value="all" className="bg-[#0c0c0f]">All Sentiments</option>
+                <option value="positive" className="bg-[#0c0c0f]">Positive</option>
+                <option value="neutral" className="bg-[#0c0c0f]">Neutral</option>
+                <option value="negative" className="bg-[#0c0c0f]">Negative</option>
+                <option value="mixed" className="bg-[#0c0c0f]">Mixed</option>
               </select>
             </div>
           </div>
         </div>
+      )}
 
-        {!isLoading && backendPersonas.length > 0 && (
-          <div className="mb-6 rounded border border-emerald-500/15 bg-emerald-950/15 px-4 py-2 text-[9px] font-mono uppercase tracking-wider text-emerald-300">
-            Latest synthesis loaded from the backend.
+      {/* Persona Grid */}
+      <div className="mx-auto max-w-7xl px-6 sm:px-10">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-[#6b6b78]">
+            <Loader2 className="h-6 w-6 animate-spin mb-3" />
+            <span className="text-[10px] font-mono uppercase tracking-wider">Loading panel...</span>
           </div>
-        )}
-
-        {loadError && (
-          <div className="mb-6 rounded border border-rose-500/15 bg-rose-950/15 px-4 py-2 text-[9px] font-mono uppercase tracking-wider text-rose-300">
-            {loadError}
+        ) : loadError ? (
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-6 text-center">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-rose-400">{loadError}</p>
           </div>
-        )}
-
-        {/* Directory Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {isLoading ? (
-            <div className="col-span-full rounded border border-white/5 bg-black/40 p-8 text-center text-[10px] font-mono uppercase tracking-wider text-[#7f8084]">
-              Loading personas from the database...
+        ) : visiblePersonas.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="h-14 w-14 rounded-xl border border-white/[0.05] bg-white/[0.02] flex items-center justify-center mb-5">
+              <MessageSquare className="h-6 w-6 text-[#6b6b78]" />
             </div>
-          ) : visiblePersonas.length > 0 ? (
-            visiblePersonas.map((p, i) => (
-            <motion.div
-              key={p.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.02 }}
-              onClick={() => setSelectedId(p.id)}
-              className="premium-card group relative overflow-hidden rounded border border-white/5 p-4.5 cursor-pointer hover:border-white/20 transition"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 shrink-0">
-                  <PremiumAvatar name={p.name} className="h-9 w-9" />
-                </div>
-                <div className="min-w-0 text-left">
-                  <h3 className="font-bold text-white text-xs truncate group-hover:text-[#7f8084] transition-colors">
-                    {p.name}
-                  </h3>
-                  <p className="text-[9px] text-[#7f8084] truncate mt-0.5 font-mono">
-                    {p.age} YRS // {p.occupation.toUpperCase()}
-                  </p>
-                  <div className="mt-1 flex items-center gap-1 text-[8px] text-[#7f8084] font-mono">
-                    <MapPin className="h-2.5 w-2.5" />
-                    {p.location.toUpperCase()}
+            <p className="text-sm font-bold text-white mb-2">No personas found</p>
+            <p className="text-[11px] text-[#6b6b78] mb-6">Run the Simulator first to generate your research panel.</p>
+            <Link to="/create-experiment" className="btn-primary text-[11px]">
+              Open Simulator <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {visiblePersonas.map((p, i) => {
+              const archEntry = ARCHETYPE_MAP[p._archetype] ?? { label: p._archetype, tone: "neutral" as const };
+              const style = getSentimentStyle(archEntry.tone);
+              return (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.03 }}
+                  onClick={() => setSelectedId(p.id)}
+                  className="premium-card group rounded-xl border border-white/[0.05] p-4 cursor-pointer hover:border-white/[0.12] transition-all hover:bg-white/[0.015]"
+                >
+                  {/* Avatar + Name */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <PremiumAvatar name={p.name} className="h-9 w-9 shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="text-xs font-semibold text-white truncate">{p.name}</h3>
+                      <p className="text-[9px] text-[#6b6b78] font-mono mt-0.5 truncate">
+                        {p.age} · {p.occupation.split(" ").slice(0, 3).join(" ")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Status and Action indicators */}
-              <div className="mt-4 flex items-center justify-between border-t border-white/[0.03] pt-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[8px] uppercase tracking-widest font-bold font-mono px-2 py-0.5 rounded border ${
-                      p.sentiment === "positive"
-                        ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
-                        : p.sentiment === "negative"
-                          ? "border-rose-500/20 bg-rose-500/5 text-rose-400"
-                          : "border-amber-500/20 bg-amber-500/5 text-amber-400"
-                    }`}
-                  >
-                    {p.sentiment}
-                  </span>
-                  {p.source === "generated" && (
-                    <span className="text-[8px] uppercase tracking-widest font-bold font-mono px-2 py-0.5 rounded border border-white/5 bg-white/[0.01] text-[#7f8084]">
-                      Generated
+                  {/* Location */}
+                  <div className="flex items-center gap-1 text-[9px] text-[#6b6b78] font-mono mb-3">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{p.city}, {p.country}</span>
+                  </div>
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between border-t border-white/[0.04] pt-2.5">
+                    <span className={`text-[8px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${style.badge}`}>
+                      {archEntry.label}
                     </span>
-                  )}
-                </div>
-                <span className="text-[9px] text-white font-mono font-bold transition-transform group-hover:translate-x-0.5 flex items-center gap-1">
-                  VIEW DOSSIER <ArrowRight className="h-3 w-3" />
-                </span>
-              </div>
-            </motion.div>
-            ))
-          ) : (
-            <div className="col-span-full rounded border border-white/5 bg-black/40 p-8 text-center">
-              <p className="text-sm font-bold text-white">No personas found in the database.</p>
-              <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-[#7f8084]">
-                Create an experiment first to generate and save personas.
-              </p>
-            </div>
-          )}
-        </div>
+                    <ArrowRight className="h-3 w-3 text-[#6b6b78] group-hover:text-white transition-colors group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
-        {/* Global Action Drawer Bar */}
-        <div className="mt-12 flex flex-wrap justify-center gap-3 border-t border-white/[0.03] pt-8">
-          <button
-            disabled={isRunningSurvey}
-            onClick={handleRunSurvey}
-            className="flex items-center gap-2 rounded border border-white/5 bg-white/[0.005] px-4 py-2.5 text-[10px] font-bold font-mono text-white hover:bg-white/10 transition disabled:opacity-50"
-          >
-            {isRunningSurvey ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> RUNNING SURVEY IN BACKEND...
-              </>
-            ) : (
-              <>
-                <ClipboardList className="h-4 w-4" /> RUN SURVEYS
-              </>
-            )}
-          </button>
-          <Link
-            to="/interview"
-            className="flex items-center gap-2 rounded bg-white px-5 py-2.5 text-[10px] font-bold font-mono text-black hover:bg-zinc-200 transition"
-          >
-            <MessageSquare className="h-4 w-4" /> INTERVIEW CONSOLE <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-
+        {/* Action bar */}
+        {!isLoading && backendPersonas.length > 0 && (
+          <div className="mt-10 flex flex-wrap gap-3 border-t border-white/[0.04] pt-8 justify-center">
+            <button
+              disabled={isRunningSurvey}
+              onClick={handleRunSurvey}
+              className="btn-primary text-[11px] disabled:opacity-50"
+            >
+              {isRunningSurvey ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Running survey...</>
+              ) : (
+                <><ClipboardList className="h-4 w-4" /> Run Survey</>
+              )}
+            </button>
+            <Link
+              to="/interview"
+              className="btn-ghost text-[11px]"
+            >
+              <MessageSquare className="h-4 w-4" /> Interview Console
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* Slide-out Dossier Drawer */}
+      {/* ═══════════ SLIDE-OUT DOSSIER ═══════════ */}
       <AnimatePresence>
-        {selectedId && selectedPersona && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedId(null)}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-            />
-            
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md border-l border-white/[0.04] bg-[#030304] p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between text-left"
-            >
-              <div>
-                {/* Header controls */}
-                <div className="flex items-center justify-between border-b border-white/[0.03] pb-4 mb-5">
-                  <span className="flex items-center gap-1.5 text-[9px] font-bold font-mono uppercase tracking-widest text-[#7f8084]">
-                    <Layers className="h-3.5 w-3.5" /> Researcher Dossier
+        {selectedId && selectedPersona && (() => {
+          const archEntry = ARCHETYPE_MAP[selectedPersona._archetype] ?? { label: selectedPersona._archetype, tone: "neutral" as const };
+          const style = getSentimentStyle(archEntry.tone);
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedId(null)}
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 250 }}
+                className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md border-l border-white/[0.05] bg-[#0a0a0d] flex flex-col shadow-2xl"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/[0.05] px-6 py-4 shrink-0">
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#6b6b78]">
+                    Researcher Dossier
                   </span>
                   <button
                     onClick={() => setSelectedId(null)}
-                    className="flex h-8 w-8 items-center justify-center rounded border border-white/5 bg-white/5 text-[#8f95a5] hover:text-white transition"
+                    className="h-8 w-8 rounded-lg border border-white/[0.06] flex items-center justify-center text-[#6b6b78] hover:text-white hover:border-white/20 transition"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* Profile dossier info */}
-                <div className="space-y-6 overflow-y-auto max-h-[72vh] pr-1 no-scrollbar">
-                  {/* Persona Identity card */}
-                  <div className="flex items-center gap-4 bg-white/[0.005] border border-white/5 p-4 rounded">
-                    <div className="h-12 w-12 shrink-0">
-                      <PremiumAvatar name={selectedPersona.name} className="h-12 w-12" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-bold text-white leading-none">{selectedPersona.name}</h2>
-                      <p className="text-[10px] text-[#7f8084] mt-1 font-mono uppercase">
-                        {selectedPersona.age} YRS // {selectedPersona.occupation.toUpperCase()}
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                  {/* Identity card */}
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-white/[0.02]">
+                    <PremiumAvatar name={selectedPersona.name} className="h-12 w-12 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-sm font-bold text-white">{selectedPersona.name}</h2>
+                      <p className="text-[10px] text-[#6b6b78] font-mono mt-0.5 truncate">
+                        {selectedPersona.occupation}
                       </p>
-                      <div className="mt-1 flex items-center gap-1 text-[9px] text-[#7f8084] font-mono">
-                        <MapPin className="h-3 w-3" />
-                        {selectedPersona.location.toUpperCase()}
+                      <div className="flex items-center gap-1 mt-1 text-[9px] text-[#6b6b78] font-mono">
+                        <MapPin className="h-2.5 w-2.5" />
+                        {selectedPersona.city}, {selectedPersona.country}
                       </div>
                     </div>
-                    <span className="ml-auto text-[8px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-950/20 border border-emerald-900/40 px-2 py-0.5 rounded">
-                      VERIFIED
+                    <span className={`text-[8px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${style.badge}`}>
+                      {archEntry.label}
                     </span>
                   </div>
 
-                  <div className="bg-white/[0.005] border border-white/5 p-3 rounded text-[10px] text-[#8f95a5] leading-relaxed">
-                    {selectedPersona.summary}
+                  {/* Quick stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { icon: GraduationCap, label: "Age", val: `${selectedPersona.age}` },
+                      { icon: Briefcase, label: "Income", val: selectedPersona.annual_income },
+                      { icon: IndianRupee, label: "Budget", val: selectedPersona.budget },
+                    ].map(({ icon: Icon, label, val }) => (
+                      <div key={label} className="rounded-lg border border-white/[0.05] bg-white/[0.01] p-3 text-center">
+                        <Icon className="h-3.5 w-3.5 text-[#6b6b78] mx-auto mb-1.5" />
+                        <div className="text-[8px] font-mono text-[#6b6b78] uppercase tracking-wider">{label}</div>
+                        <div className="text-[10px] font-semibold text-white mt-0.5 truncate">{val}</div>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Summary */}
+                  <div className="rounded-lg border border-white/[0.05] bg-white/[0.01] p-4">
+                    <h4 className="text-[9px] font-mono uppercase tracking-widest text-[#6b6b78] mb-2">Summary</h4>
+                    <p className="text-[11px] text-[#c0c0cc] leading-relaxed">{selectedPersona.persona_summary}</p>
+                  </div>
+
+                  {/* Quote */}
+                  {selectedPersona.quote && (
+                    <div className="border-l-2 border-white/10 pl-4">
+                      <p className="text-[11px] text-[#8b8b96] italic leading-relaxed">"{selectedPersona.quote}"</p>
+                    </div>
+                  )}
 
                   {/* Psychographic metrics */}
-                  <div className="space-y-3.5">
-                    <h3 className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#7f8084] flex items-center gap-1.5">
-                      <Compass className="h-3.5 w-3.5" /> Psychographic Vectors
+                  <div>
+                    <h3 className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-[#6b6b78] mb-3">
+                      <Compass className="h-3.5 w-3.5" /> Psychographic Profile
                     </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <MetricBar
-                        label="AI Trust Factor"
-                        value={78 + (selectedPersona.name.length % 3) * 8}
-                      />
-                      <MetricBar
-                        label="Tech Sophistication"
-                        value={
-                          selectedPersona.tech.includes("Expert")
-                            ? 95
-                            : selectedPersona.tech.includes("Advanced")
-                              ? 82
-                              : 64
-                        }
-                      />
-                      <MetricBar
-                        label="Adopter Speed"
-                        value={selectedPersona.personality.includes("Curious") ? 92 : 68}
-                      />
-                      <MetricBar
-                        label="Price Sensitivity"
-                        value={
-                          selectedPersona.frustrations.some(
-                            (f) =>
-                              f.toLowerCase().includes("pricing") ||
-                              f.toLowerCase().includes("expensive"),
-                          )
-                            ? 88
-                            : 45
-                        }
-                      />
+                    <div className="space-y-2">
+                      {[
+                        { label: "Tech Proficiency", val: selectedPersona.technology_usage },
+                        { label: "Digital Literacy", val: selectedPersona.digital_literacy },
+                        { label: "Purchase Frequency", val: selectedPersona.purchase_frequency },
+                        { label: "Brand Loyalty", val: selectedPersona.brand_loyalty },
+                      ].map(({ label, val }) => (
+                        <div key={label} className="flex justify-between items-center text-[10px]">
+                          <span className="font-mono text-[#6b6b78] uppercase tracking-wider text-[8px]">{label}</span>
+                          <span className="font-mono text-white">{val}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Goals & Frustrations split grid */}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <h4 className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#7f8084] flex items-center gap-1">
-                        <Heart className="h-3 w-3 text-emerald-400" /> Core Desires
+                  {/* Goals & Pain Points */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <h4 className="text-[8px] font-mono uppercase tracking-widest text-[#6b6b78] flex items-center gap-1 mb-2">
+                        <Heart className="h-3 w-3 text-emerald-400" /> Goals
                       </h4>
-                      <ul className="space-y-1.5 text-[10px] text-[#8f95a5] list-disc list-inside bg-white/[0.005] border border-white/5 p-3 rounded leading-normal">
-                        {selectedPersona.goals.map((g) => (
-                          <li key={g} className="leading-relaxed">
+                      <ul className="space-y-1">
+                        {(selectedPersona.goals || []).slice(0, 3).map((g) => (
+                          <li key={g} className="text-[10px] text-[#c0c0cc] leading-snug flex gap-1.5">
+                            <span className="text-emerald-400 shrink-0 mt-0.5">›</span>
                             {g}
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <div className="space-y-2">
-                      <h4 className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#7f8084] flex items-center gap-1">
-                        <X className="h-3 w-3 text-rose-400" /> Core Obstacles
+                    <div>
+                      <h4 className="text-[8px] font-mono uppercase tracking-widest text-[#6b6b78] flex items-center gap-1 mb-2">
+                        <X className="h-3 w-3 text-rose-400" /> Pain Points
                       </h4>
-                      <ul className="space-y-1.5 text-[10px] text-[#8f95a5] list-disc list-inside bg-white/[0.005] border border-white/5 p-3 rounded leading-normal">
-                        {selectedPersona.frustrations.map((g) => (
-                          <li key={g} className="leading-relaxed">
-                            {g}
+                      <ul className="space-y-1">
+                        {(selectedPersona.pain_points || []).slice(0, 3).map((p) => (
+                          <li key={p} className="text-[10px] text-[#c0c0cc] leading-snug flex gap-1.5">
+                            <span className="text-rose-400 shrink-0 mt-0.5">›</span>
+                            {p}
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
 
-                  {/* Tech stack & interests */}
-                  <div className="space-y-3.5">
+                  {/* Personality traits */}
+                  {selectedPersona.personality?.traits?.length > 0 && (
                     <div>
-                      <h4 className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#7f8084] mb-2">
-                        Technology footprint
-                      </h4>
-                      <div className="bg-white/[0.005] border border-white/5 p-3 rounded text-[10px] text-[#f2f2f3] font-mono">
-                        {selectedPersona.tech.toUpperCase()}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#7f8084] mb-2">
-                        Interests & Affiliations
-                      </h4>
+                      <h4 className="text-[8px] font-mono uppercase tracking-widest text-[#6b6b78] mb-2">Personality Traits</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {selectedPersona.interests.map((i) => (
-                          <span
-                            key={i}
-                            className="rounded border border-white/5 bg-white/[0.01] px-2 py-0.5 text-[9px] text-[#7f8084] font-mono"
-                          >
-                            {i.toUpperCase()}
+                        {selectedPersona.personality.traits.map((t) => (
+                          <span key={t} className="text-[9px] font-mono px-2 py-0.5 rounded-md border border-white/[0.06] bg-white/[0.02] text-[#c0c0cc]">
+                            {t}
                           </span>
                         ))}
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  )}
 
-              {/* Action drawer footer */}
-              <div className="border-t border-white/[0.03] pt-4 flex gap-3">
-                <Link
-                  to="/interview"
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded bg-white py-3 text-[10px] font-bold font-mono tracking-wider text-black hover:bg-zinc-200 transition"
-                >
-                  <MessageSquare className="h-3.5 w-3.5" /> DIALOGUE SESSION
-                </Link>
-                <div className="flex items-center gap-1.5 text-[8px] font-mono font-bold text-[#7f8084] bg-white/5 border border-white/5 px-3 rounded">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#7f8084]" /> GDPR SECURE
+                  {/* Apps */}
+                  {selectedPersona.favourite_apps?.length > 0 && (
+                    <div>
+                      <h4 className="text-[8px] font-mono uppercase tracking-widest text-[#6b6b78] mb-2">Favourite Apps</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedPersona.favourite_apps.slice(0, 8).map((a) => (
+                          <span key={a} className="text-[9px] font-mono px-2 py-0.5 rounded-md border border-white/[0.05] bg-white/[0.01] text-[#6b6b78]">
+                            {a}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
+
+                {/* Footer actions */}
+                <div className="border-t border-white/[0.05] p-4 flex gap-3 shrink-0">
+                  <Link
+                    to="/interview"
+                    className="flex-1 btn-primary text-[10px] justify-center py-2.5"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" /> Interview
+                  </Link>
+                  <button
+                    onClick={() => setSelectedId(null)}
+                    className="btn-ghost text-[10px] py-2.5 px-4"
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function MetricBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-white/[0.005] border border-white/5 p-3 rounded">
-      <div className="flex justify-between text-[8px] text-[#7f8084] uppercase font-bold font-mono">
-        <span>{label}</span>
-        <span className="text-white">{value}%</span>
-      </div>
-      <div className="h-1 rounded-full bg-white/5 overflow-hidden mt-2">
-        <div
-          className="h-full bg-white"
-          style={{ width: `${value}%` }}
-        />
-      </div>
     </div>
   );
 }

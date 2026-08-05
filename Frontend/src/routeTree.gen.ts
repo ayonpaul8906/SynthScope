@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SurveyRouteImport } from './routes/survey'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as PersonasRouteImport } from './routes/personas'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CreateExperimentRouteImport } from './routes/create-experiment'
@@ -22,6 +24,11 @@ const SurveyRoute = SurveyRouteImport.update({
   path: '/survey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
@@ -30,6 +37,11 @@ const ReportRoute = ReportRouteImport.update({
 const PersonasRoute = PersonasRouteImport.update({
   id: '/personas',
   path: '/personas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InterviewRoute = InterviewRouteImport.update({
@@ -58,8 +70,10 @@ export interface FileRoutesByFullPath {
   '/create-experiment': typeof CreateExperimentRoute
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
+  '/login': typeof LoginRoute
   '/personas': typeof PersonasRoute
   '/report': typeof ReportRoute
+  '/signup': typeof SignupRoute
   '/survey': typeof SurveyRoute
 }
 export interface FileRoutesByTo {
@@ -67,8 +81,10 @@ export interface FileRoutesByTo {
   '/create-experiment': typeof CreateExperimentRoute
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
+  '/login': typeof LoginRoute
   '/personas': typeof PersonasRoute
   '/report': typeof ReportRoute
+  '/signup': typeof SignupRoute
   '/survey': typeof SurveyRoute
 }
 export interface FileRoutesById {
@@ -77,8 +93,10 @@ export interface FileRoutesById {
   '/create-experiment': typeof CreateExperimentRoute
   '/dashboard': typeof DashboardRoute
   '/interview': typeof InterviewRoute
+  '/login': typeof LoginRoute
   '/personas': typeof PersonasRoute
   '/report': typeof ReportRoute
+  '/signup': typeof SignupRoute
   '/survey': typeof SurveyRoute
 }
 export interface FileRouteTypes {
@@ -88,8 +106,10 @@ export interface FileRouteTypes {
     | '/create-experiment'
     | '/dashboard'
     | '/interview'
+    | '/login'
     | '/personas'
     | '/report'
+    | '/signup'
     | '/survey'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -97,8 +117,10 @@ export interface FileRouteTypes {
     | '/create-experiment'
     | '/dashboard'
     | '/interview'
+    | '/login'
     | '/personas'
     | '/report'
+    | '/signup'
     | '/survey'
   id:
     | '__root__'
@@ -106,8 +128,10 @@ export interface FileRouteTypes {
     | '/create-experiment'
     | '/dashboard'
     | '/interview'
+    | '/login'
     | '/personas'
     | '/report'
+    | '/signup'
     | '/survey'
   fileRoutesById: FileRoutesById
 }
@@ -116,8 +140,10 @@ export interface RootRouteChildren {
   CreateExperimentRoute: typeof CreateExperimentRoute
   DashboardRoute: typeof DashboardRoute
   InterviewRoute: typeof InterviewRoute
+  LoginRoute: typeof LoginRoute
   PersonasRoute: typeof PersonasRoute
   ReportRoute: typeof ReportRoute
+  SignupRoute: typeof SignupRoute
   SurveyRoute: typeof SurveyRoute
 }
 
@@ -128,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/survey'
       fullPath: '/survey'
       preLoaderRoute: typeof SurveyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report': {
@@ -142,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/personas'
       fullPath: '/personas'
       preLoaderRoute: typeof PersonasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interview': {
@@ -180,8 +220,10 @@ const rootRouteChildren: RootRouteChildren = {
   CreateExperimentRoute: CreateExperimentRoute,
   DashboardRoute: DashboardRoute,
   InterviewRoute: InterviewRoute,
+  LoginRoute: LoginRoute,
   PersonasRoute: PersonasRoute,
   ReportRoute: ReportRoute,
+  SignupRoute: SignupRoute,
   SurveyRoute: SurveyRoute,
 }
 export const routeTree = rootRouteImport

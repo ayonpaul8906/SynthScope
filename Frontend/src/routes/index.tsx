@@ -1,620 +1,462 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { ArrowRight, Sparkles, Terminal, Activity, HelpCircle, User } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
+import { 
+  ArrowRight, Users, MessageSquare, Zap, FileText, 
+  Play, Star, BarChart3, LineChart, Target, FileDown, 
+  ShieldCheck, ArrowRightCircle, Sparkles, Building2, Briefcase, Network
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Landing,
+  head: () => ({
+    meta: [{ title: "SynthScope — Premium Synthetic User Research" }],
+  }),
 });
 
-const initialPersonas = [
-  {
-    name: "Aarav Mehta",
-    role: "Product Manager",
-    location: "Bengaluru, IN",
-    tech: "Jira, Notion, Linear",
-    motivation: 82,
-    sensitivity: 45,
-    adopterSpeed: 70,
-    quote:
-      "If we could validate specifications in minutes instead of weeks, shipping speed doubles.",
-  },
-  {
-    name: "Elena Rossi",
-    role: "Design Director",
-    location: "Milan, IT",
-    tech: "Figma, Framer, Rive",
-    motivation: 92,
-    sensitivity: 30,
-    adopterSpeed: 88,
-    quote: "Concept testing and layout feedback across desaturated segments unblocks product debt.",
-  },
-  {
-    name: "Yuki Tanaka",
-    role: "Indie Developer",
-    location: "Tokyo, JP",
-    tech: "VS Code, Vercel, Stripe",
-    motivation: 74,
-    sensitivity: 80,
-    adopterSpeed: 60,
-    quote:
-      "Agencies cost thousands. Standard automated surveys on virtual panels save startup runway.",
-  },
-];
-
-// Consensus clusters for the SVG Graph Tab
-const consensusNodes = [
-  {
-    id: 1,
-    cx: 30,
-    cy: 40,
-    r: 6,
-    val: 84,
-    name: "Marcus V.",
-    role: "Growth PM",
-    text: "Onboarding flow is too long.",
-  },
-  {
-    id: 2,
-    cx: 50,
-    cy: 25,
-    r: 8,
-    val: 92,
-    name: "Priya S.",
-    role: "Lead Designer",
-    text: "Figma plugin is a game changer.",
-  },
-  {
-    id: 3,
-    cx: 70,
-    cy: 60,
-    r: 5,
-    val: 78,
-    name: "Yuki T.",
-    role: "Developer",
-    text: "Documentation is very clean.",
-  },
-  {
-    id: 4,
-    cx: 45,
-    cy: 75,
-    r: 7,
-    val: 86,
-    name: "Sophia L.",
-    role: "SaaS Founder",
-    text: "Needs standard tier pricing.",
-  },
-  {
-    id: 5,
-    cx: 20,
-    cy: 65,
-    r: 6,
-    val: 81,
-    name: "Arnaud D.",
-    role: "Enterprise Arch",
-    text: "Ask for SOC2 documentation.",
-  },
-];
+// Animations
+const staggerContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1 } },
+};
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
+const fadeLeft: Variants = {
+  hidden: { opacity: 0, x: -30 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
+const fadeRight: Variants = {
+  hidden: { opacity: 0, x: 30 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] } },
+};
 
 function Landing() {
-  const [activeTab, setActiveTab] = useState<"emulator" | "matrix" | "consensus">("emulator");
-  const [selectedPersonaIdx, setSelectedPersonaIdx] = useState(0);
-  const [personaState, setPersonaState] = useState(initialPersonas);
-  const [selectedNode, setSelectedNode] = useState<(typeof consensusNodes)[0] | null>(null);
-
-  // Dynamic slider handler
-  const handleSliderChange = (
-    key: "motivation" | "sensitivity" | "adopterSpeed",
-    value: number,
-  ) => {
-    setPersonaState((prev) => {
-      const updated = [...prev];
-      updated[selectedPersonaIdx] = {
-        ...updated[selectedPersonaIdx],
-        [key]: value,
-      };
-      return updated;
-    });
-  };
-
-  const currentPersona = personaState[selectedPersonaIdx];
-
   return (
-    <div className="mx-auto max-w-6xl px-6 pt-16 sm:px-12 text-[#f2f2f3]">
-      {/* Outer alignment borders framing the landing canvas */}
-      <div className="border-l border-r border-white/[0.02] px-6 sm:px-12 md:px-16">
-        {/* Editorial Header */}
-        <section className="text-center py-16 sm:py-24 max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#7f8084] flex items-center justify-center gap-2 font-mono"
+    <div className="text-[#f4f4f5] overflow-hidden selection:bg-[#d6a07e] selection:text-[#09090b]">
+      {/* ═══════════════════════════════════════
+          HERO SECTION
+      ═══════════════════════════════════════ */}
+      <section className="relative min-h-[95vh] flex items-center justify-center pt-10 pb-16 px-6 lg:px-12 overflow-hidden">
+        {/* Subtle background glow */}
+        <div 
+          className="absolute inset-0 pointer-events-none" 
+          style={{ 
+            background: 'radial-gradient(ellipse 70% 60% at 50% 20%, rgba(214, 160, 126, 0.04) 0%, transparent 60%)' 
+          }} 
+        />
+
+        <div className="max-w-[1400px] w-full mx-auto grid lg:grid-cols-[1fr_1.1fr] gap-16 lg:gap-8 items-center relative z-10">
+          
+          {/* LEFT: Copy & CTAs */}
+          <motion.div 
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="flex flex-col items-start text-left max-w-2xl"
           >
-            <span className="h-1 w-1  rounded-full bg-white/40 animate-pulse" />
-            SYNTHETIC SIMULATION PLATFORM 
+            {/* Headline */}
+            <motion.h1 
+              variants={fadeUp} 
+              className="text-[clamp(3.5rem,5.5vw,5.5rem)] leading-[1.05] font-semibold tracking-tight mb-8"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Understand users.<br />
+              Build what <span style={{ fontFamily: "var(--font-display)", color: "#d6a07e" }} className="italic font-normal">matters.</span>
+            </motion.h1>
+
+            {/* Subheadline */}
+            <motion.p 
+              variants={fadeUp} 
+              className="text-lg text-[#a1a1aa] leading-relaxed mb-10 max-w-lg font-light"
+            >
+              Generate realistic synthetic personas, run surveys or interviews, and uncover powerful insights without the cost and complexity of real user research.
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mb-16">
+              <Link to="/signup" className="btn-primary group">
+                Start Your First Experiment
+                <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <button className="btn-outline group">
+                See How It Works
+                <Play className="w-4 h-4 ml-1 fill-current opacity-80" />
+              </button>
+            </motion.div>
+
+            {/* Feature small icons row */}
+            <motion.div variants={fadeUp} className="flex items-start gap-8 border-t border-white/5 pt-8 w-full">
+              {[
+                { icon: Users, label: "AI Generated\nPersonas" },
+                { icon: MessageSquare, label: "Survey & Interview\nSimulation" },
+                { icon: BarChart3, label: "Insight Extraction\nAgent" },
+                { icon: FileDown, label: "Export Reports\nas PDF" }
+              ].map((item, i) => (
+                <div key={i} className="flex flex-col gap-3 group cursor-pointer">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/[0.03] border border-white/10 group-hover:border-[#d6a07e]/40 transition-colors">
+                    <item.icon className="w-4 h-4 text-[#a1a1aa] group-hover:text-[#d6a07e] transition-colors" />
+                  </div>
+                  <span className="text-[10px] text-[#a1a1aa] uppercase tracking-wider leading-relaxed whitespace-pre-line group-hover:text-white transition-colors">
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl leading-[0.92] text-white"
+          {/* RIGHT: 3D Composition */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+            className="relative hidden lg:flex justify-center items-center h-[700px] w-full perspective-[1200px]"
           >
-            EMULATE PANELS.
-            <br />
-            <span className="font-editor font-light text-[#7f8084]">Validate specifications.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mt-8 max-w-xl mx-auto text-xs leading-relaxed text-[#7f8084] sm:text-sm font-medium"
-          >
-            Deploy targeted panels of high-fidelity synthetic personas to simulate user interviews,
-            run automated surveys, and validate product specifications — instantly.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-10 flex justify-center gap-4 text-xs font-semibold"
-          >
-            <Link
-              to="/create-experiment"
-              className="rounded-md bg-white px-5 py-3 text-[11px] font-bold text-black hover:bg-zinc-200 transition-colors"
+            <div 
+              className="relative w-full h-full transform-style-3d"
+              style={{ transform: "rotateY(-12deg) rotateX(6deg) scale(0.95)" }}
             >
-              Configure Panel
-            </Link>
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-white/5 bg-white/[0.02] px-5 py-3 text-[11px] font-bold hover:bg-white/[0.04] transition"
-            >
-              Live Demo
-            </Link>
-          </motion.div>
-        </section>
 
-        {/* Multi-Tab Workspace Playground */}
-        <section className="pb-24 max-w-5xl mx-auto">
-          <div className="premium-card rounded-lg overflow-hidden border border-white/[0.04] bg-black/60 shadow-2xl backdrop-blur-xl">
-            {/* OS Window Frame Header */}
-            <div className="flex items-center justify-between border-b border-white/[0.03] pb-3 pt-3 px-4 bg-white/[0.005]">
-              <div className="flex gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-white/10" />
-                <span className="h-2 w-2 rounded-full bg-white/10" />
-                <span className="h-2 w-2 rounded-full bg-white/10" />
-              </div>
+              {/* Card: Persona Overview */}
+              <div 
+                className="absolute left-[10%] w-[420px] rounded-2xl border border-white/10 bg-[#0f0f12]/80 backdrop-blur-xl p-8 shadow-2xl"
+                style={{ transform: "translateZ(40px) translateX(40px)" }}
+              >
+                <h3 className="text-sm font-medium text-white/90 mb-6">Persona Overview</h3>
+                
+                {/* Profile Header */}
+                <div className="flex items-start gap-5 mb-8">
+                  <div className="w-16 h-20 rounded-lg overflow-hidden border border-white/10 bg-black/50 shrink-0">
+                    <img src="/persona_avatar.jpg" alt="Persona" className="w-full h-full object-cover grayscale opacity-90" />
+                  </div>
+                  <div className="pt-1">
+                    <h4 className="text-lg font-semibold text-white mb-1">Arjun, 27</h4>
+                    <p className="text-xs text-[#a1a1aa] font-mono mb-1">Software Engineer</p>
+                    <p className="text-xs text-[#a1a1aa] font-mono mb-3">Bengaluru, India</p>
+                    <div className="flex gap-2">
+                      <span className="text-[9px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/70">Tech-savvy</span>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/70">Early Adopter</span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Interactive Tabs */}
-              <div className="flex gap-2">
-                {[
-                  { id: "emulator", label: "[01] EMULATOR" },
-                  { id: "matrix", label: "[02] VECTOR MATRIX" },
-                  { id: "consensus", label: "[03] CONSENSUS GRAPH" },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id as any)}
-                    className={`rounded px-3 py-1.5 text-[9px] font-bold font-mono tracking-wider transition ${
-                      activeTab === t.id
-                        ? "bg-white/5 text-white border border-white/5"
-                        : "text-[#7f8084] hover:text-white"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="w-12 hidden md:block" />
-            </div>
-
-            {/* Tab Contents Viewport */}
-            <div className="h-[390px] bg-black/10 text-left relative overflow-hidden select-none">
-              {/* TAB 01: EMULATOR (Interactive persona profiles & parameters) */}
-              {activeTab === "emulator" && (
-                <div className="grid grid-cols-[200px_1fr] h-full">
-                  {/* Left directory */}
-                  <aside className="border-r border-white/[0.03] p-4 space-y-4">
-                    <span className="text-[8px] font-bold uppercase tracking-wider text-[#7f8084] block font-mono">
-                      PANEL DIRECTORY
-                    </span>
-                    <div className="space-y-1">
-                      {personaState.map((p, idx) => (
-                        <button
-                          key={p.name}
-                          onClick={() => setSelectedPersonaIdx(idx)}
-                          className={`flex w-full items-center justify-between rounded px-2.5 py-2 text-[10px] text-left transition ${
-                            selectedPersonaIdx === idx
-                              ? "bg-white/5 text-white"
-                              : "text-[#7f8084] hover:text-[#f2f2f3]"
-                          }`}
-                        >
-                          <span>{p.name}</span>
-                          {selectedPersonaIdx === idx && (
-                            <span className="h-1 w-1 rounded-full bg-[#7f8084]" />
-                          )}
-                        </button>
+                {/* Progress Bars Section */}
+                <div className="space-y-6">
+                  {/* Motivations */}
+                  <div>
+                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Motivations</h5>
+                    <div className="space-y-2.5">
+                      {[
+                        { label: 'Career Growth', val: 85 },
+                        { label: 'Efficiency', val: 92 },
+                        { label: 'Financial Freedom', val: 75 }
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-4">
+                          <span className="text-xs text-white/80 w-32">{item.label}</span>
+                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.val}%` }}
+                              transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
+                              className="h-full bg-[#d6a07e] rounded-full" 
+                            />
+                          </div>
+                        </div>
                       ))}
                     </div>
-                  </aside>
-
-                  {/* Right work area */}
-                  <div className="grid grid-cols-[1fr_200px] h-full">
-                    {/* Parameter inputs */}
-                    <div className="p-5 space-y-4">
-                      <div className="flex justify-between items-center border-b border-white/[0.03] pb-2">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono">
-                          SPECIFICATION MODELER
-                        </span>
-                        <span className="text-[9px] text-[#7f8084] font-mono">YUKI-NODE-7</span>
-                      </div>
-
-                      <div className="space-y-3.5 mt-2">
-                        <div>
-                          <div className="flex justify-between text-[9px] text-[#7f8084] uppercase font-mono tracking-wider">
-                            <span>Motivation Index</span>
-                            <span className="text-white font-bold">
-                              {currentPersona.motivation}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="20"
-                            max="100"
-                            value={currentPersona.motivation}
-                            onChange={(e) =>
-                              handleSliderChange("motivation", parseInt(e.target.value))
-                            }
-                            className="mt-2 w-full accent-[#7f8084] h-1 rounded-full bg-white/5 appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[9px] text-[#7f8084] uppercase font-mono tracking-wider">
-                            <span>Price Sensitivity</span>
-                            <span className="text-white font-bold">
-                              {currentPersona.sensitivity}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10"
-                            max="100"
-                            value={currentPersona.sensitivity}
-                            onChange={(e) =>
-                              handleSliderChange("sensitivity", parseInt(e.target.value))
-                            }
-                            className="mt-2 w-full accent-[#7f8084] h-1 rounded-full bg-white/5 appearance-none cursor-pointer"
-                          />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-[9px] text-[#7f8084] uppercase font-mono tracking-wider">
-                            <span>Early Adopter Speed</span>
-                            <span className="text-white font-bold">
-                              {currentPersona.adopterSpeed}%
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10"
-                            max="100"
-                            value={currentPersona.adopterSpeed}
-                            onChange={(e) =>
-                              handleSliderChange("adopterSpeed", parseInt(e.target.value))
-                            }
-                            className="mt-2 w-full accent-[#7f8084] h-1 rounded-full bg-white/5 appearance-none cursor-pointer"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Dynamic Quote output */}
-                      <div className="mt-4 p-3 bg-white/[0.01] border border-white/5 rounded-md">
-                        <span className="text-[8px] font-mono font-bold text-[#7f8084] block">
-                          SIMULATED QUOTE
-                        </span>
-                        <p className="text-[10px] italic text-[#f2f2f3] mt-1.5 leading-relaxed">
-                          "{currentPersona.quote}"
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Meta Dossier */}
-                    <aside className="border-l border-white/[0.03] p-4 bg-white/[0.005] space-y-4">
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-white block border-b border-white/[0.03] pb-1.5 font-mono">
-                        DOSSIER FILE
-                      </span>
-                      <div className="space-y-3.5 text-[10px]">
-                        <div>
-                          <span className="text-[8px] text-[#7f8084] block font-mono uppercase">
-                            Segment
-                          </span>
-                          <p className="text-white mt-0.5 font-semibold">{currentPersona.role}</p>
-                        </div>
-                        <div>
-                          <span className="text-[8px] text-[#7f8084] block font-mono uppercase">
-                            Hotspot Node
-                          </span>
-                          <p className="text-white mt-0.5">{currentPersona.location}</p>
-                        </div>
-                        <div>
-                          <span className="text-[8px] text-[#7f8084] block font-mono uppercase">
-                            Stack Config
-                          </span>
-                          <p className="text-[#7f8084] mt-0.5 font-mono text-[9px]">
-                            {currentPersona.tech}
-                          </p>
-                        </div>
-                      </div>
-                    </aside>
                   </div>
+
+                  {/* Pain Points */}
+                  <div>
+                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Pain Points</h5>
+                    <div className="space-y-2.5">
+                      {[
+                        { label: 'Complex Onboarding', val: 80 },
+                        { label: 'Limited Customization', val: 65 },
+                        { label: 'High Costs', val: 90 }
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center gap-4">
+                          <span className="text-xs text-white/80 w-32">{item.label}</span>
+                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.val}%` }}
+                              transition={{ duration: 1, delay: 0.8 + (i * 0.1) }}
+                              className="h-full bg-white/40 rounded-full" 
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preferred Features */}
+                  <div>
+                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Preferred Features</h5>
+                    <div className="flex gap-2">
+                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Automation</span>
+                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Analytics</span>
+                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Integrations</span>
+                    </div>
+                  </div>
+
                 </div>
-              )}
-
-              {/* TAB 02: VECTOR MATRIX (Simulated prompt vector maps & compiler logs) */}
-              {activeTab === "matrix" && (
-                <div className="grid grid-cols-[260px_1fr] h-full p-4 gap-4">
-                  {/* Logs box */}
-                  <div className="border border-white/5 bg-black/40 rounded p-3.5 font-mono text-[9px] text-[#7f8084] space-y-2 overflow-y-auto leading-normal no-scrollbar">
-                    <div className="flex items-center gap-1.5 text-white font-bold mb-2">
-                      <Terminal className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>SYNTHESIS LOGGER</span>
-                    </div>
-                    <div>&gt; INITIALIZING VECTOR ENGINE... [OK]</div>
-                    <div>&gt; SEEDING ATTRIBUTE GRIDS FOR {personaState.length} NODES</div>
-                    <div>&gt; VECTOR MAPPING SECS INITIATED</div>
-                    <div>&gt; DEPLOYING SIMULATOR THREADS [SUCCESS]</div>
-                    <div>&gt; ANALYZING DIALECT STACKS...</div>
-                    <div className="text-white">&gt; STABILITY INDEX: 99.8%</div>
-                  </div>
-
-                  {/* Flow Graph */}
-                  <div className="border border-white/5 bg-white/[0.005] rounded p-4 flex flex-col justify-between relative">
-                    <div className="flex justify-between items-center border-b border-white/[0.03] pb-2">
-                      <span className="text-[9px] font-bold text-white uppercase tracking-wider font-mono">
-                        VECTOR INFERENCE LINKS
-                      </span>
-                      <span className="text-[9px] text-emerald-400 font-mono">ONLINE</span>
-                    </div>
-
-                    {/* visual node boxes with lines connecting them */}
-                    <div className="flex justify-between items-center py-10 relative">
-                      <div className="border border-white/10 bg-white/[0.02] p-2 rounded text-center text-[10px] z-10 w-24">
-                        <span className="text-[#7f8084] block text-[8px] font-mono">
-                          PROMPT INPUT
-                        </span>
-                        <span className="text-white font-bold font-mono">ONBOARD-QA</span>
-                      </div>
-
-                      <div className="absolute top-1/2 left-24 right-24 h-[1px] bg-gradient-to-r from-white/10 via-white/5 to-white/10 -translate-y-1/2 z-0" />
-
-                      <div className="space-y-2 z-10">
-                        {["PM Segment", "Design Segment", "Engineering Segment"].map((seg, idx) => (
-                          <div
-                            key={seg}
-                            className="border border-white/5 bg-black/40 px-3 py-1.5 rounded flex items-center gap-2 text-[10px] w-36"
-                          >
-                            <Activity className="h-3 w-3 text-emerald-400" />
-                            <span className="text-white font-mono text-[9px]">{seg}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 03: CONSENSUS GRAPH (Interactive SVG scatter cluster) */}
-              {activeTab === "consensus" && (
-                <div className="grid grid-cols-[1fr_220px] h-full p-4 gap-4">
-                  {/* SVG Canvas */}
-                  <div className="border border-white/5 bg-white/[0.005] rounded p-4 flex flex-col justify-between relative">
-                    <div className="flex justify-between items-center border-b border-white/[0.03] pb-2">
-                      <span className="text-[9px] font-bold text-white uppercase tracking-wider font-mono">
-                        ALIGNMENT MATRIX
-                      </span>
-                      <span className="text-[9px] text-[#7f8084] font-mono">
-                        CLICK NODES TO INTERACT
-                      </span>
-                    </div>
-
-                    <div className="flex-1 relative grid place-items-center">
-                      <svg width="100%" height="200" className="opacity-90">
-                        {/* Grids lines */}
-                        <line x1="10%" y1="0" x2="10%" y2="100%" stroke="rgba(255,255,255,0.02)" />
-                        <line x1="50%" y1="0" x2="50%" y2="100%" stroke="rgba(255,255,255,0.02)" />
-                        <line x1="90%" y1="0" x2="90%" y2="100%" stroke="rgba(255,255,255,0.02)" />
-                        <line x1="0" y1="30%" x2="100%" y2="30%" stroke="rgba(255,255,255,0.02)" />
-                        <line x1="0" y1="70%" x2="100%" y2="70%" stroke="rgba(255,255,255,0.02)" />
-
-                        {consensusNodes.map((node) => (
-                          <circle
-                            key={node.id}
-                            cx={`${node.cx}%`}
-                            cy={`${node.cy}%`}
-                            r={node.r}
-                            fill={
-                              selectedNode?.id === node.id ? "#ffffff" : "rgba(255,255,255,0.2)"
-                            }
-                            stroke="rgba(255,255,255,0.3)"
-                            strokeWidth="1.5"
-                            className="cursor-pointer transition-all hover:scale-125 hover:fill-white"
-                            onClick={() => setSelectedNode(node)}
-                          />
-                        ))}
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Detail Panel */}
-                  <div className="border border-white/5 bg-white/[0.005] rounded p-4 flex flex-col justify-between">
-                    <span className="text-[8px] font-bold uppercase tracking-wider text-white block border-b border-white/[0.03] pb-1.5 font-mono">
-                      SELECTION HUD
-                    </span>
-
-                    <div className="flex-1 flex flex-col justify-center text-[10px] space-y-3">
-                      {selectedNode ? (
-                        <>
-                          <div>
-                            <span className="text-[8px] text-[#7f8084] block font-mono">
-                              NAME / ROLE
-                            </span>
-                            <p className="text-white font-bold">{selectedNode.name}</p>
-                            <p className="text-[#7f8084]">{selectedNode.role}</p>
-                          </div>
-                          <div>
-                            <span className="text-[8px] text-[#7f8084] block font-mono">
-                              INFERENCE VOTE
-                            </span>
-                            <p className="text-white">{selectedNode.text}</p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center text-[#7f8084] italic py-8 text-[9px]">
-                          Click a cluster node dot to parse alignment.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
+              
+              {/* Decorative ground/shadow */}
+              <div 
+                className="absolute bottom-[-10%] left-[-10%] right-[-10%] h-[200px] bg-gradient-to-t from-[#09090b] to-transparent pointer-events-none"
+                style={{ transform: "translateZ(-100px)" }}
+              />
             </div>
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          FEATURES SECTION
+      ═══════════════════════════════════════ */}
+      <section className="py-32 px-6 border-t border-white/5 bg-gradient-to-b from-[#09090b] to-[#0d0d12]">
+        <div className="max-w-[1400px] mx-auto text-center">
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-[10px] font-semibold tracking-[0.25em] text-[#a1a1aa] uppercase mb-4"
+          >
+            Everything you need to
+          </motion.p>
+          <motion.h2 
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl lg:text-5xl font-semibold text-white mb-20 tracking-tight"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Run research at scale
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-0 lg:divide-x divide-white/5">
+            {[
+              { 
+                icon: Users, 
+                title: "Hyper-real Personas", 
+                desc: "AI generates diverse, realistic personas based on your product and audience." 
+              },
+              { 
+                icon: MessageSquare, 
+                title: "Survey & Interview Modes", 
+                desc: "Run surveys or one-on-one interviews with AI personas that think and respond like real users." 
+              },
+              { 
+                icon: Network, 
+                title: "Insight Extraction Agent", 
+                desc: "Automatically analyze responses to surface patterns, themes, sentiments, and actionable insights." 
+              },
+              { 
+                icon: FileDown, 
+                title: "Export & Share", 
+                desc: "Export beautiful reports as PDF or share dashboards with your team and stakeholders." 
+              },
+              { 
+                icon: ShieldCheck, 
+                title: "Private & Secure", 
+                desc: "Your data stays yours. Enterprise-grade security and privacy by design." 
+              }
+            ].map((feature, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="flex flex-col items-center text-center px-6"
+              >
+                <feature.icon className="w-8 h-8 text-[#d6a07e] mb-6 stroke-[1.5]" />
+                <h3 className="text-sm font-semibold text-white mb-4 tracking-wide">{feature.title}</h3>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed">{feature.desc}</p>
+              </motion.div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Corporate Social Proof */}
-        <section className="py-16 border-t border-white/[0.03] text-center max-w-4xl mx-auto">
-          <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#7f8084] font-mono">
-            TRUSTED BY DESIGN AND PRODUCT ENGINEERING DIVISIONS
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-10 items-center justify-items-center opacity-30 tracking-widest text-[11px] font-bold font-display uppercase">
-            <span>Acme Corp</span>
-            <span>Linear</span>
-            <span>Vercel</span>
-            <span>Stripe</span>
-            <span>Clerk</span>
-          </div>
-        </section>
-
-        {/* Horizontal Methodology Blueprint Blocks */}
-        <section className="py-24 border-t border-white/[0.03] space-y-16 max-w-4xl mx-auto">
-          <div className="mb-16">
-            <span className="text-[8px] font-bold uppercase tracking-[0.25em] text-[#7f8084] font-mono">
-              METHODOLOGY MATRIX
-            </span>
-            <h3 className="text-2xl font-bold tracking-tight text-white mt-3 font-display">
-              Deep user validation parameters.
-            </h3>
-          </div>
-
-          {/* Pillar 01 */}
-          <div className="grid md:grid-cols-[100px_1fr_300px] gap-8 items-start pb-12 border-b border-white/[0.03]">
-            <div className="text-[10px] font-bold font-mono text-[#7f8084]">01 / DEFINE</div>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Structured Demographics
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-[#7f8084]">
-                Map exact targets by professional domain, workspace stack configurations, technical
-                competency indices, and demographic distribution files.
-              </p>
-            </div>
-            <div className="premium-card rounded p-3.5 text-[10px] space-y-2 select-none text-left">
-              <div className="flex justify-between text-[#7f8084] text-[8px] uppercase font-mono">
-                <span>Technical Index</span>
-                <span className="text-white font-bold">85%</span>
-              </div>
-              <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                <div className="h-full bg-white" style={{ width: "85%" }} />
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                <span className="rounded border border-white/5 px-1.5 py-0.5 text-[8px] text-[#7f8084] font-mono">
-                  SOFTWARE
-                </span>
-                <span className="rounded border border-white/5 bg-white/5 px-1.5 py-0.5 text-[8px] text-white font-mono">
-                  SAAS
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Pillar 02 */}
-          <div className="grid md:grid-cols-[100px_1fr_300px] gap-8 items-start pb-12 border-b border-white/[0.03]">
-            <div className="text-[10px] font-bold font-mono text-[#7f8084]">02 / SIMULATE</div>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Organic Inference
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-[#7f8084]">
-                Simulate 1:1 chat dialogue cascades and consensus matrices. Persona agents evaluate
-                parameters against custom memories to yield authentic responses.
-              </p>
-            </div>
-            <div className="space-y-2 select-none text-left">
-              <div className="rounded border border-white/5 bg-white/[0.01] p-2.5 text-[9px] text-[#7f8084] max-w-[85%] font-mono">
-                Q: What is the main design barrier?
-              </div>
-              <div className="rounded bg-white/[0.04] border border-white/5 p-2.5 text-[9px] text-white ml-auto max-w-[85%] font-mono">
-                A: Figma sync configurations are too slow.
-              </div>
-            </div>
-          </div>
-
-          {/* Pillar 03 */}
-          <div className="grid md:grid-cols-[100px_1fr_300px] gap-8 items-start pb-12">
-            <div className="text-[10px] font-bold font-mono text-[#7f8084]">03 / SYNTHESIZE</div>
-            <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Consensus Groupings
-              </h4>
-              <p className="mt-2 text-xs leading-relaxed text-[#7f8084]">
-                Compile key quotes, segment sentiment clusters, and output structured validation
-                reports detailing usability outcomes.
-              </p>
-            </div>
-            <div className="premium-card rounded p-3.5 select-none text-left flex items-center justify-between">
-              <div>
-                <span className="text-[8px] uppercase tracking-widest text-[#7f8084] block font-mono">
-                  Alignment Score
-                </span>
-                <span className="text-sm font-bold text-white mt-1 block font-mono">8.4 / 10</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="h-1.5 w-1.5 rounded-full bg-white/10" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Minimalist CTA Panel */}
-        <section className="py-24 border-t border-white/[0.03] text-center max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl font-display uppercase">
-            VALIDATE CONVICTION. INSTANTLY.
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-[#7f8084] font-medium">
-            Deploy virtual research panels in under 60 seconds. Eliminate sample recruiting delay.
-          </p>
-
-          <div className="mt-8 flex justify-center gap-4">
-            <Link
-              to="/create-experiment"
-              className="rounded-md bg-white px-5 py-3 text-[11px] font-bold text-black hover:bg-zinc-200 transition-colors"
+      {/* ═══════════════════════════════════════
+          HOW IT WORKS
+      ═══════════════════════════════════════ */}
+      <section className="py-32 px-6 border-t border-white/5">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-24">
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-[10px] font-semibold tracking-[0.25em] text-[#d6a07e] uppercase mb-4"
             >
-              Configure Panel
-            </Link>
-            <Link
-              to="/dashboard"
-              className="rounded-md border border-white/5 bg-white/[0.01] px-5 py-3 text-[11px] font-bold hover:bg-white/[0.03] transition-colors"
+              How It Works
+            </motion.p>
+            <motion.h2 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl lg:text-5xl font-semibold text-white tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              View Live Panel
-            </Link>
+              From brief to insights in 4 simple steps
+            </motion.h2>
           </div>
-        </section>
-      </div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Connecting line for desktop */}
+            <div className="hidden lg:block absolute top-[40%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 z-0" />
+
+            {[
+              { num: "1", icon: FileText, title: "Define Your Study", desc: "Add your product details, target audience, and research objectives. Tell us what you want to learn." },
+              { num: "2", icon: Users, title: "Generate Personas", desc: "Our AI creates diverse, realistic personas tailored to your audience and product context." },
+              { num: "3", icon: MessageSquare, title: "Run Surveys or Interviews", desc: "Ask questions and get thoughtful responses from AI personas in real-time." },
+              { num: "4", icon: BarChart3, title: "Extract Insights", desc: "AI analyzes all responses and delivers clear, actionable insights and recommendations." }
+            ].map((step, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6 }}
+                className="relative z-10 flex flex-col items-center text-center p-8 rounded-2xl bg-[#0d0d12] border border-white/5 hover:border-white/10 transition-colors"
+              >
+                <div className="mb-8 relative">
+                   <step.icon className="w-10 h-10 text-white/80 stroke-[1]" />
+                </div>
+                
+                <div className="w-8 h-8 rounded-full bg-[#d6a07e] flex items-center justify-center text-[#09090b] font-bold text-xs mb-6 shadow-[0_0_15px_rgba(214,160,126,0.3)]">
+                  {step.num}
+                </div>
+
+                <h3 className="text-sm font-semibold text-white mb-4">{step.title}</h3>
+                <p className="text-xs text-[#a1a1aa] leading-relaxed">{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-16 flex justify-center">
+            <button className="btn-outline group px-6 py-3">
+              See How It Works
+              <Play className="w-3.5 h-3.5 ml-1.5 fill-current opacity-80" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          USE CASES
+      ═══════════════════════════════════════ */}
+      <section className="py-32 px-6 border-t border-white/5 bg-[#09090b]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="text-center mb-20">
+             <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-[10px] font-semibold tracking-[0.25em] text-[#a1a1aa] uppercase mb-4"
+            >
+              Use Cases
+            </motion.p>
+            <motion.h2 
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl font-semibold text-white tracking-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Powering research across teams
+            </motion.h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             {[
+              { icon: Target, title: "Product Teams", desc: "Validate ideas, features, and roadmaps with confidence." },
+              { icon: Users, title: "UX Researchers", desc: "Run formative research and usability studies at scale." },
+              { icon: Briefcase, title: "Marketing Teams", desc: "Understand audience needs, messaging, and positioning." },
+              { icon: Building2, title: "Consultants", desc: "Deliver faster research with richer insights for clients." }
+            ].map((uc, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-8 rounded-2xl bg-[#0c0c0f] border border-white/5 hover:border-white/10 transition-all hover:-translate-y-1"
+              >
+                <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center mb-6">
+                  <uc.icon className="w-5 h-5 text-[#d6a07e]" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-3">{uc.title}</h3>
+                <p className="text-sm text-[#a1a1aa] leading-relaxed">{uc.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════
+          CTA SECTION
+      ═══════════════════════════════════════ */}
+      <section className="py-40 px-6 border-t border-white/5 relative overflow-hidden bg-gradient-to-b from-[#09090b] to-[#050508]">
+        
+        {/* Abstract graphic */}
+        <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-40">
+           <div className="absolute inset-0 rounded-full border-[0.5px] border-white/10 scale-75" />
+           <div className="absolute inset-0 rounded-full border-[0.5px] border-white/10 scale-90" />
+           <div className="absolute inset-0 rounded-full border-[0.5px] border-white/5 scale-100" />
+           
+           {/* Center Glowing Logo block */}
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-3xl border border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-[0_0_100px_rgba(214,160,126,0.15)]">
+              <div className="w-16 h-16 border-2 border-[#d6a07e] rounded-xl transform rotate-45 flex items-center justify-center">
+                 <div className="w-8 h-8 border-2 border-[#d6a07e] rounded-lg -rotate-45" />
+              </div>
+           </div>
+
+           {/* Orbiting dots */}
+           <div className="absolute top-[10%] left-[50%] w-2 h-2 rounded-full bg-[#d6a07e] shadow-[0_0_10px_#d6a07e]" />
+           <div className="absolute bottom-[20%] left-[20%] w-1.5 h-1.5 rounded-full bg-white/50" />
+        </div>
+
+        <div className="max-w-[1200px] mx-auto relative z-10">
+          <div className="max-w-2xl">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl lg:text-7xl font-semibold text-white leading-[1.1] tracking-tight mb-8"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Ready to rethink<br />user research?
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-[#a1a1aa] mb-12 font-light"
+            >
+              Join product teams who are building<br />better products with SynthScope.
+            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <Link to="/signup" className="btn-primary group px-8 py-4">
+                Start Your First Experiment
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }

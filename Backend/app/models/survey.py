@@ -12,6 +12,7 @@ class SurveyQuestionRecord(Base):
     __tablename__ = "survey_questions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=True, index=True)
     product_name = Column(String, nullable=False)
     industry = Column(String, nullable=False)
     product_description = Column(Text, nullable=False)
@@ -33,6 +34,7 @@ class PersonaSurveyResponseRecord(Base):
     __tablename__ = "persona_survey_responses"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=True, index=True)
     question_id = Column(
         UUID(as_uuid=True),
         ForeignKey("survey_questions.id", ondelete="CASCADE"),

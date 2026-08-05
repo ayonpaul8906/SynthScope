@@ -23,7 +23,7 @@ const commonOpts = {
     legend: { 
       labels: { 
         color: chartText, 
-        font: { size: 9, family: "Inter", weight: "bold" } 
+        font: { size: 9, family: "Inter", weight: 700 as const } 
       } 
     } 
   },

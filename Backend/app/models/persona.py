@@ -12,6 +12,7 @@ class Persona(Base):
 
     # Primary Key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String, nullable=True, index=True)
 
     # Basic Information
     name = Column(String, nullable=False)

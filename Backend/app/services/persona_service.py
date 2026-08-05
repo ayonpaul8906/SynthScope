@@ -16,17 +16,19 @@ load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-def get_all_personas(db: Session):
+from typing import Optional
+
+def get_all_personas(db: Session, user_id: Optional[str] = None):
     """
-    Fetch all personas stored in the database.
+    Fetch all personas stored in the database scoped by user_id.
     """
-    return fetch_all_personas(db)
+    return fetch_all_personas(db, user_id=user_id)
 
 
 QUESTION_GEMINI_MODELS = [
     m.strip() for m in os.getenv(
         "SURVEY_GEMINI_MODELS",
-        "models/gemini-3.5-flash,models/gemini-2.5-flash,models/gemini-1.5-flash"
+        "models/gemini-3.5-flash,models/gemini-3.5-flash-lite"
     ).split(",") if m.strip()
 ]
 
@@ -161,9 +163,9 @@ Return JSON in this exact format:
     )
 
 
-def save_generated_personas(db, personas):
+def save_generated_personas(db, personas, user_id: Optional[str] = None):
     """
-    Normalize generated persona payloads and persist them.
+    Normalize generated persona payloads and persist them scoped by user_id.
     """
 
     normalized_personas = [
@@ -171,4 +173,4 @@ def save_generated_personas(db, personas):
         for persona in personas
     ]
 
-    return create_personas(db, normalized_personas)
+    return create_personas(db, normalized_personas, user_id=user_id)

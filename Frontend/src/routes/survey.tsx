@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { personas as seedPersonas } from "@/data/personas";
 import { PremiumAvatar } from "@/lib/avatar";
+import { getAuthHeaders } from "@/lib/api-headers";
 
 export const Route = createFileRoute("/survey")({
   component: SurveyPage,
@@ -64,7 +65,9 @@ function SurveyPage() {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [dbPersonas, setDbPersonas] = useState<BackendPersona[]>([]);
   const [responsesMap, setResponsesMap] = useState<Record<string, StoredPersonaSurveyResponse[]>>({});
-  
+  // Track which question IDs are currently being polled for responses
+  const [pendingResponseIds, setPendingResponseIds] = useState<Set<string>>(new Set());
+
   const [draft, setDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
@@ -73,50 +76,55 @@ function SurveyPage() {
   const [expandedResponse, setExpandedResponse] = useState<{ personaName: string; text: string; sentiment: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Fetch initial data: personas & questions from database
+  /**
+   * Pipeline-based data loading:
+   * 1. Fetch personas and questions immediately — show page with no blocking
+   * 2. If no questions exist, call /survey/run-pipeline to generate them + kick off responses in backend
+   * 3. Start polling responses for each question independently
+   */
   useEffect(() => {
     let active = true;
 
     const initData = async () => {
       setIsLoading(true);
       try {
+        const headers = await getAuthHeaders();
         // Fetch personas
-        const personaRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/personas`);
+        const personaRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/personas`, { headers });
         let loadedPersonas: BackendPersona[] = [];
         if (personaRes.ok) {
           const data = await personaRes.json();
-          if (Array.isArray(data) && data.length > 0) {
-            loadedPersonas = data;
-          }
+          if (Array.isArray(data) && data.length > 0) loadedPersonas = data;
         }
         if (active) setDbPersonas(loadedPersonas);
 
-        // Fetch questions
-        const questionsRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions`);
+        // Fetch questions (fast)
+        const questionsRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions`, { headers });
         let loadedQuestions: StoredQuestion[] = [];
         if (questionsRes.ok) {
           const qData = await questionsRes.json();
-          if (Array.isArray(qData) && qData.length > 0) {
-            loadedQuestions = qData;
-          }
+          if (Array.isArray(qData) && qData.length > 0) loadedQuestions = qData;
         }
 
-        // If no questions exist in DB, trigger auto run to generate initial questions & responses
+        // No questions yet — trigger pipeline (questions return fast, responses generated in BG)
         if (loadedQuestions.length === 0) {
-          const runRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/run-all`, {
+          const pipelineRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/run-pipeline`, {
             method: "POST",
+            headers,
           });
-          if (runRes.ok) {
-            const reFetchQuestions = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions`);
-            if (reFetchQuestions.ok) {
-              loadedQuestions = await reFetchQuestions.json();
-            }
+          if (pipelineRes.ok) {
+            const pData = await pipelineRes.json();
+            if (Array.isArray(pData) && pData.length > 0) loadedQuestions = pData;
           }
         }
 
-        if (active) setQuestions(loadedQuestions);
+        if (active) {
+          setQuestions(loadedQuestions);
+          // Mark all questions as pending responses
+          setPendingResponseIds(new Set(loadedQuestions.map((q) => q.id)));
+        }
       } catch (err) {
-        console.error("Error loading survey data from database:", err);
+        console.error("Error loading survey data:", err);
       } finally {
         if (active) setIsLoading(false);
       }
@@ -124,51 +132,60 @@ function SurveyPage() {
 
     void initData();
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   const activeQuestion = questions[activeQuestionIndex];
 
-  // Fetch responses for active question when it changes
+  /**
+   * Per-question polling:
+   * For each question without responses, poll every 3s (up to 20 attempts).
+   * This lets responses appear as the backend generates them.
+   */
   useEffect(() => {
-    if (!activeQuestion) return;
-    if (responsesMap[activeQuestion.id]) return;
+    if (pendingResponseIds.size === 0) return;
 
-    let active = true;
-    const fetchResponses = async () => {
-      try {
-        let res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions/${activeQuestion.id}/responses`);
-        let data: StoredPersonaSurveyResponse[] = [];
-        if (res.ok) {
-          data = await res.json();
-        }
+    const pollers: ReturnType<typeof setInterval>[] = [];
 
-        // If no responses exist, run survey for this question
-        if (!data || data.length === 0) {
-          const surveyRes = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions/${activeQuestion.id}/survey`, {
-            method: "POST",
-          });
-          if (surveyRes.ok) {
-            data = await surveyRes.json();
-          }
-        }
-
-        if (active && Array.isArray(data)) {
-          setResponsesMap((prev) => ({ ...prev, [activeQuestion.id]: data }));
-        }
-      } catch (err) {
-        console.error(`Error fetching responses for question ${activeQuestion.id}:`, err);
+    for (const questionId of pendingResponseIds) {
+      // Skip if already loaded
+      if (responsesMap[questionId] && responsesMap[questionId].length > 0) {
+        setPendingResponseIds((prev) => { const next = new Set(prev); next.delete(questionId); return next; });
+        continue;
       }
-    };
 
-    void fetchResponses();
+      let attempts = 0;
+      const MAX_ATTEMPTS = 20;
 
-    return () => {
-      active = false;
-    };
-  }, [activeQuestion, responsesMap]);
+      const poller = setInterval(async () => {
+        attempts++;
+        try {
+          const headers = await getAuthHeaders();
+          const res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions/${questionId}/responses`, { headers });
+          if (res.ok) {
+            const data: StoredPersonaSurveyResponse[] = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              setResponsesMap((prev) => ({ ...prev, [questionId]: data }));
+              setPendingResponseIds((prev) => { const next = new Set(prev); next.delete(questionId); return next; });
+              clearInterval(poller);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error(`Polling error for question ${questionId}:`, err);
+        }
+
+        if (attempts >= MAX_ATTEMPTS) {
+          clearInterval(poller);
+          setPendingResponseIds((prev) => { const next = new Set(prev); next.delete(questionId); return next; });
+        }
+      }, 3000);
+
+      pollers.push(poller);
+    }
+
+    return () => { pollers.forEach(clearInterval); };
+  }, [pendingResponseIds]);
 
   // Typing effect animation
   useEffect(() => {
@@ -181,21 +198,19 @@ function SurveyPage() {
     return () => clearTimeout(timer);
   }, [typingPersonaIds]);
 
-  // Handle adding custom question
+  // Handle adding custom question — backend derives product context from stored product brief
   const addQuestion = async () => {
     const qText = draft.trim();
     if (!qText || isAddingQuestion) return;
 
     setIsAddingQuestion(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${API_BASE_URL.replace(/\/$/, "")}/survey/questions/add-custom`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question_text: qText,
-          product_name: "SynthScope Product",
-          industry: "Technology",
-        }),
+        headers,
+        // Only send question text — backend uses the stored product brief for full context
+        body: JSON.stringify({ question_text: qText }),
       });
 
       if (!res.ok) {
@@ -438,22 +453,21 @@ function SurveyPage() {
                       </h2>
                     </div>
 
-                    {/* Sentiment Distribution Card */}
-                    <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 px-4 py-3 rounded-lg shrink-0">
-                      <div className="flex items-center gap-2">
-                        <ThumbsUp className="h-4 w-4 text-emerald-400" />
-                        <div>
-                          <div className="text-white font-bold text-xs font-mono">{sentimentStats.pos}%</div>
-                          <div className="text-[8px] font-mono text-[#7f8084]">POSITIVE ({sentimentStats.posCount})</div>
-                        </div>
+                    {/* Executive Sentiment Distribution HUD */}
+                    <div className="flex items-center gap-3 bg-white/[0.02] border border-white/5 px-4 py-2.5 rounded-lg shrink-0 font-mono text-[9px]">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <span>POSITIVE {sentimentStats.pos}%</span>
                       </div>
-                      <div className="h-6 w-px bg-white/10" />
-                      <div className="flex items-center gap-2">
-                        <ThumbsDown className="h-4 w-4 text-rose-400" />
-                        <div>
-                          <div className="text-white font-bold text-xs font-mono">{sentimentStats.neg}%</div>
-                          <div className="text-[8px] font-mono text-[#7f8084]">CRITICAL ({sentimentStats.negCount})</div>
-                        </div>
+                      <div className="h-3 w-px bg-white/10" />
+                      <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        <span>NEUTRAL {sentimentStats.neu}%</span>
+                      </div>
+                      <div className="h-3 w-px bg-white/10" />
+                      <div className="flex items-center gap-1.5 text-rose-400 font-bold">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                        <span>CRITICAL {sentimentStats.neg}%</span>
                       </div>
                     </div>
                   </div>
@@ -461,7 +475,7 @@ function SurveyPage() {
                   {/* Visual Progress Bar & Filter Tabs */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
                     {/* Sentiment Distribution Bar */}
-                    <div className="w-full sm:w-1/2 flex h-2 rounded-full overflow-hidden bg-white/5 p-0.5 gap-0.5">
+                    <div className="w-full sm:w-1/2 flex h-1.5 rounded-full overflow-hidden bg-white/5 p-0.5 gap-0.5">
                       <div style={{ width: `${sentimentStats.pos}%` }} className="bg-emerald-400/80 rounded-l" />
                       <div style={{ width: `${sentimentStats.neu}%` }} className="bg-amber-400/60" />
                       <div style={{ width: `${sentimentStats.neg}%` }} className="bg-rose-400/80 rounded-r" />
@@ -494,39 +508,40 @@ function SurveyPage() {
                   </div>
                 </div>
 
-                {/* Grid of Persona Responses — Clear & Overflow Free Layout */}
-                <div className="grid gap-5 sm:grid-cols-2">
+                {/* Grid of Persona Responses — Polished Layout */}
+                <div className="grid gap-4 sm:grid-cols-2">
                   {filteredPersonas.map((p, idx) => {
                     const isTyping = typingPersonaIds.includes(p.id);
                     const respObj = activeResponsesList.find((r) => r.persona_id === p.id) || activeResponsesList[idx % activeResponsesList.length];
-                    const responseText = respObj?.response_text || "Analyzing response for this persona...";
+                    const responseText = respObj?.response_text;
                     const sentimentVal = respObj?.sentiment?.toLowerCase() || "neutral";
+                    const isPending = activeQuestion && pendingResponseIds.has(activeQuestion.id) && !responseText;
 
                     return (
                       <motion.div
                         key={p.id}
-                        initial={{ opacity: 0, y: 12 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: idx * 0.03 }}
-                        className="premium-card rounded-xl border border-white/[0.06] bg-black/60 p-5 flex flex-col justify-between hover:border-white/20 transition-all shadow-xl group min-h-[220px]"
+                        transition={{ duration: 0.25, delay: idx * 0.02 }}
+                        className="premium-card rounded-xl border border-white/[0.06] bg-black/60 p-4.5 flex flex-col justify-between hover:border-white/20 transition-all shadow-xl group"
                       >
-                        {/* Persona Info & Sentiment Tag Header */}
-                        <div className="flex items-start justify-between gap-3 border-b border-white/[0.04] pb-3 mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 shrink-0">
-                              <PremiumAvatar name={p.name} className="h-9 w-9" />
+                        {/* Persona Info & Sentiment Tag Header — Only Name and Age */}
+                        <div className="flex items-center justify-between gap-3 border-b border-white/[0.04] pb-2.5 mb-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="h-7 w-7 shrink-0">
+                              <PremiumAvatar name={p.name} className="h-7 w-7" />
                             </div>
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold text-white truncate">{p.name}</h4>
-                              <p className="text-[9px] text-[#7f8084] font-mono uppercase truncate mt-0.5">
-                                {p.age} YRS · {p.occupation}
+                              <p className="text-[9px] text-[#7f8084] font-mono truncate">
+                                Age {p.age}
                               </p>
                             </div>
                           </div>
 
-                          {/* Sentiment Tag */}
+                          {/* Sentiment Tag Badge */}
                           <span
-                            className={`text-[8px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                            className={`text-[8px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded border shrink-0 ${
                               sentimentVal === "positive"
                                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                                 : sentimentVal === "negative"
@@ -534,23 +549,27 @@ function SurveyPage() {
                                 : "border-amber-500/30 bg-amber-500/10 text-amber-300"
                             }`}
                           >
-                            {sentimentVal}
+                            {responseText ? (sentimentVal === "negative" ? "critical" : sentimentVal) : "pending"}
                           </span>
                         </div>
 
-                        {/* Response Text Body — Fully visible & scrollable if long */}
-                        <div className="flex-1 my-2">
+                        {/* Response Text Body */}
+                        <div className="flex-1 my-1.5">
                           <AnimatePresence mode="wait">
-                            {isTyping ? (
+                            {isTyping || isPending ? (
                               <motion.div
                                 key="typing"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="flex gap-2 items-center text-[10px] text-[#7f8084] font-mono tracking-wider py-4"
+                                className="space-y-2 py-2"
                               >
-                                <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                                <span>SYNTHESIZING VECTOR RESPONSE...</span>
+                                <div className="flex gap-2 items-center text-[10px] text-[#7f8084] font-mono tracking-wider mb-2">
+                                  <Loader2 className="h-3 w-3 animate-spin text-white/40" />
+                                  <span>SYNTHESIZING...</span>
+                                </div>
+                                <div className="h-2 rounded bg-white/[0.04] animate-pulse w-full" />
+                                <div className="h-2 rounded bg-white/[0.03] animate-pulse w-4/5" />
                               </motion.div>
                             ) : (
                               <motion.div
@@ -559,14 +578,11 @@ function SurveyPage() {
                                 animate={{ opacity: 1 }}
                                 className="space-y-2"
                               >
-                                {/* Scrollable text box for full long response visibility */}
-                                <div className="max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                                  <p className="text-xs text-[#d1d1d6] leading-relaxed italic relative pl-4 border-l-2 border-white/10">
-                                    "{responseText}"
-                                  </p>
-                                </div>
+                                <p className="text-xs text-[#e4e4e7] leading-relaxed relative pl-3 border-l-2 border-white/15 break-words font-sans">
+                                  "{responseText || "No response recorded."}"
+                                </p>
 
-                                {responseText.length > 200 && (
+                                {responseText && responseText.length > 250 && (
                                   <button
                                     onClick={() =>
                                       setExpandedResponse({
@@ -586,9 +602,9 @@ function SurveyPage() {
                         </div>
 
                         {/* Footer Meta */}
-                        <div className="border-t border-white/[0.03] pt-2.5 mt-2 flex items-center justify-between text-[8px] font-mono text-[#7f8084]">
-                          <span>COHORT AUDIT PERSISTED</span>
-                          <span className="text-white/40 font-bold">SYNTHSCOPE AI</span>
+                        <div className="border-t border-white/[0.03] pt-2 mt-2 flex items-center justify-between text-[8px] font-mono text-[#7f8084]">
+                          <span>COHORT RESPONSE</span>
+                          <span className="text-white/40 font-bold">SYNTHSCOPE</span>
                         </div>
                       </motion.div>
                     );
