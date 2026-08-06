@@ -40,11 +40,19 @@ export function Navbar() {
         {/* Brand */}
         <Link
           to="/"
-          className="flex items-center gap-3 group"
-          style={{ fontFamily: "var(--font-display)" }}
+          className="flex items-center gap-2.5 group"
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-[#d6a07e] animate-pulse-dot" />
-          <span className="text-sm font-semibold tracking-wider text-white">
+          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#dfbe9f]/20 via-[#d6a07e]/30 to-[#9c6643]/20 border border-[#d6a07e]/50 flex items-center justify-center shadow-[0_0_12px_rgba(214,160,126,0.2)] group-hover:border-[#d6a07e] transition-all">
+            <svg className="w-4 h-4 text-[#d6a07e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </div>
+          <span 
+            className="text-base text-xl font-semibold tracking-wider text-[#d6a07e] transition-colors"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
             SynthScope
           </span>
         </Link>
@@ -52,25 +60,13 @@ export function Navbar() {
         {/* ─── LANDING MODE ─── */}
         {isLandingOrAuth ? (
           <>
-            <nav className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-              {["PRODUCT", "HOW IT WORKS", "USE CASES", "DOCS"].map((item) => (
-                <Link
-                  key={item}
-                  to="/"
-                  className="text-[10px] font-bold tracking-[0.15em] text-white hover:text-[#d6a07e] transition-colors"
-                >
-                  {item}
-                </Link>
-              ))}
-            </nav>
-
             <div className="hidden lg:flex items-center gap-4">
               <Link
                 to="/login"
-                className="btn-nav group"
+                className="group flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/20 hover:border-[#d6a07e]/70 text-xs font-bold tracking-[0.08em] text-white hover:text-[#d6a07e] bg-white/[0.03] hover:bg-[#d6a07e]/10 transition-all duration-300 shadow-[0_0_15px_rgba(0,0,0,0.4)] hover:shadow-[0_0_25px_rgba(214,160,126,0.25)]"
               >
                 LAUNCH DASHBOARD
-                <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 ml-0.5 text-[#d6a07e] group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
             </div>
 

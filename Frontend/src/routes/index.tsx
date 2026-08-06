@@ -35,180 +35,94 @@ function Landing() {
   return (
     <div className="text-[#f4f4f5] overflow-hidden selection:bg-[#d6a07e] selection:text-[#09090b]">
       {/* ═══════════════════════════════════════
-          HERO SECTION
+          HERO SECTION (PREMIUM SHOWCASE)
       ═══════════════════════════════════════ */}
-      <section className="relative min-h-[95vh] flex items-center justify-center pt-10 pb-16 px-6 lg:px-12 overflow-hidden">
-        {/* Subtle background glow */}
+      <section className="relative min-h-[95vh] flex items-center justify-center px-6 lg:px-14 overflow-hidden bg-[#0a0a0c]">
+        {/* Ambient warm lighting behind the scene */}
         <div 
-          className="absolute inset-0 pointer-events-none" 
+          className="absolute top-1/2 left-2/3 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[850px] pointer-events-none rounded-full blur-3xl opacity-60" 
           style={{ 
-            background: 'radial-gradient(ellipse 70% 60% at 50% 20%, rgba(214, 160, 126, 0.04) 0%, transparent 60%)' 
+            background: 'radial-gradient(circle at center, rgba(222, 184, 150, 0.18) 0%, rgba(160, 100, 60, 0.06) 45%, transparent 75%)' 
           }} 
         />
 
-        <div className="max-w-[1400px] w-full mx-auto grid lg:grid-cols-[1fr_1.1fr] gap-16 lg:gap-8 items-center relative z-10">
+        {/* Architectural vertical fluted lines on far right (matching reference background) */}
+        <div className="absolute top-0 right-0 w-96 h-full hidden xl:flex justify-end opacity-20 pointer-events-none select-none overflow-hidden">
+          {Array.from({ length: 16 }).map((_, idx) => (
+            <div 
+              key={idx} 
+              className="w-6 h-full border-l border-white/[0.04] bg-gradient-to-r from-white/[0.01] to-transparent" 
+            />
+          ))}
+        </div>
+
+        <div className="max-w-[1440px] w-full mx-auto grid lg:grid-cols-[1fr_1.25fr] gap-12 lg:gap-8 items-center relative z-10">
           
-          {/* LEFT: Copy & CTAs */}
+          {/* LEFT: Editorial Copy & Controls */}
           <motion.div 
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="flex flex-col items-start text-left max-w-2xl"
+            className="flex flex-col items-start text-left max-w-[620px] z-10 pt-2"
           >
-            {/* Headline */}
+            {/* Editorial Headline */}
             <motion.h1 
               variants={fadeUp} 
-              className="text-[clamp(3.5rem,5.5vw,5.5rem)] leading-[1.05] font-semibold tracking-tight mb-8"
-              style={{ fontFamily: "var(--font-sans)" }}
+              className="text-[clamp(3.2rem,5.3vw,5.6rem)] leading-[1.04] font-normal text-[#fafafc] mb-7 tracking-normal"
+              style={{ fontFamily: "var(--font-display)", fontStyle: "normal" }}
             >
               Understand users.<br />
-              Build what <span style={{ fontFamily: "var(--font-display)", color: "#d6a07e" }} className="italic font-normal">matters.</span>
+              Build what <span style={{ fontFamily: "var(--font-display)" }} className="text-[#deb896] italic font-normal drop-shadow-[0_0_30px_rgba(222,184,150,0.35)]">matters.</span>
             </motion.h1>
 
             {/* Subheadline */}
             <motion.p 
               variants={fadeUp} 
-              className="text-lg text-[#a1a1aa] leading-relaxed mb-10 max-w-lg font-light"
+              className="text-base sm:text-lg text-[#a1a1aa] leading-relaxed mb-6 max-w-lg font-light tracking-normal"
             >
               Generate realistic synthetic personas, run surveys or interviews, and uncover powerful insights without the cost and complexity of real user research.
             </motion.p>
 
-            {/* CTAs */}
-            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mb-16">
-              <Link to="/signup" className="btn-primary group">
-                Start Your First Experiment
-                <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+            {/* Premium CTAs */}
+            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-5 mb-16 w-full">
+              <Link 
+                to="/signup" 
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-[#e5c4a5] via-[#deb896] to-[#cc986b] text-[#140e09] font-bold text-[15px] shadow-[0_4px_30px_rgba(222,184,150,0.28)] hover:shadow-[0_8px_45px_rgba(222,184,150,0.45)] transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 overflow-hidden"
+              >
+                <span className="relative z-10 font-semibold tracking-wide text-[#120d08]">Start Your First Experiment</span>
+                <span className="relative z-10 text-[#120d08] group-hover:translate-x-1.5 transition-transform duration-300 font-bold text-base">➔</span>
+                <div className="absolute inset-0 bg-white/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
-              <button className="btn-outline group">
-                See How It Works
-                <Play className="w-4 h-4 ml-1 fill-current opacity-80" />
-              </button>
-            </motion.div>
 
-            {/* Feature small icons row */}
-            <motion.div variants={fadeUp} className="flex items-start gap-8 border-t border-white/5 pt-8 w-full">
-              {[
-                { icon: Users, label: "AI Generated\nPersonas" },
-                { icon: MessageSquare, label: "Survey & Interview\nSimulation" },
-                { icon: BarChart3, label: "Insight Extraction\nAgent" },
-                { icon: FileDown, label: "Export Reports\nas PDF" }
-              ].map((item, i) => (
-                <div key={i} className="flex flex-col gap-3 group cursor-pointer">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/[0.03] border border-white/10 group-hover:border-[#d6a07e]/40 transition-colors">
-                    <item.icon className="w-4 h-4 text-[#a1a1aa] group-hover:text-[#d6a07e] transition-colors" />
-                  </div>
-                  <span className="text-[10px] text-[#a1a1aa] uppercase tracking-wider leading-relaxed whitespace-pre-line group-hover:text-white transition-colors">
-                    {item.label}
-                  </span>
+              <button className="group inline-flex items-center gap-4 px-6 py-3.5 rounded-xl border border-white/15 bg-[#141419]/85 hover:bg-[#1c1c24] text-[#e4e4e8] font-medium text-[15px] hover:border-[#deb896]/55 transition-all duration-300 shadow-lg">
+                <span className="tracking-wide">See How It Works</span>
+                <div className="w-7 h-7 rounded-full border border-white/20 group-hover:border-[#deb896]/70 flex items-center justify-center bg-white/[0.04] group-hover:bg-[#deb896]/20 transition-all duration-300">
+                  <Play className="w-2.5 h-2.5 fill-current text-[#deb896] ml-0.5 transition-transform group-hover:scale-110" />
                 </div>
-              ))}
+              </button>
             </motion.div>
           </motion.div>
 
-          {/* RIGHT: 3D Composition */}
+          {/* RIGHT: 3D Photocard Showcase */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-            className="relative hidden lg:flex justify-center items-center h-[700px] w-full perspective-[1200px]"
+            initial={{ opacity: 0, scale: 0.94, x: 25 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            transition={{ duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.15 }}
+            className="relative hidden lg:flex justify-center items-center w-full min-h-[740px] z-10 pl-2"
           >
-            <div 
-              className="relative w-full h-full transform-style-3d"
-              style={{ transform: "rotateY(-12deg) rotateX(6deg) scale(0.95)" }}
-            >
 
-              {/* Card: Persona Overview */}
-              <div 
-                className="absolute left-[10%] w-[420px] rounded-2xl border border-white/10 bg-[#0f0f12]/80 backdrop-blur-xl p-8 shadow-2xl"
-                style={{ transform: "translateZ(40px) translateX(40px)" }}
-              >
-                <h3 className="text-sm font-medium text-white/90 mb-6">Persona Overview</h3>
-                
-                {/* Profile Header */}
-                <div className="flex items-start gap-5 mb-8">
-                  <div className="w-16 h-20 rounded-lg overflow-hidden border border-white/10 bg-black/50 shrink-0">
-                    <img src="/persona_avatar.jpg" alt="Persona" className="w-full h-full object-cover grayscale opacity-90" />
-                  </div>
-                  <div className="pt-1">
-                    <h4 className="text-lg font-semibold text-white mb-1">Arjun, 27</h4>
-                    <p className="text-xs text-[#a1a1aa] font-mono mb-1">Software Engineer</p>
-                    <p className="text-xs text-[#a1a1aa] font-mono mb-3">Bengaluru, India</p>
-                    <div className="flex gap-2">
-                      <span className="text-[9px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/70">Tech-savvy</span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-white/70">Early Adopter</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress Bars Section */}
-                <div className="space-y-6">
-                  {/* Motivations */}
-                  <div>
-                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Motivations</h5>
-                    <div className="space-y-2.5">
-                      {[
-                        { label: 'Career Growth', val: 85 },
-                        { label: 'Efficiency', val: 92 },
-                        { label: 'Financial Freedom', val: 75 }
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-4">
-                          <span className="text-xs text-white/80 w-32">{item.label}</span>
-                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${item.val}%` }}
-                              transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
-                              className="h-full bg-[#d6a07e] rounded-full" 
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Pain Points */}
-                  <div>
-                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Pain Points</h5>
-                    <div className="space-y-2.5">
-                      {[
-                        { label: 'Complex Onboarding', val: 80 },
-                        { label: 'Limited Customization', val: 65 },
-                        { label: 'High Costs', val: 90 }
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center gap-4">
-                          <span className="text-xs text-white/80 w-32">{item.label}</span>
-                          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${item.val}%` }}
-                              transition={{ duration: 1, delay: 0.8 + (i * 0.1) }}
-                              className="h-full bg-white/40 rounded-full" 
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Preferred Features */}
-                  <div>
-                    <h5 className="text-[10px] uppercase tracking-widest text-[#a1a1aa] mb-3">Preferred Features</h5>
-                    <div className="flex gap-2">
-                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Automation</span>
-                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Analytics</span>
-                       <span className="text-xs px-3 py-1 rounded-full border border-white/10 text-white/80 bg-white/5">Integrations</span>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-              
-              {/* Decorative ground/shadow */}
-              <div 
-                className="absolute bottom-[-10%] left-[-10%] right-[-10%] h-[200px] bg-gradient-to-t from-[#09090b] to-transparent pointer-events-none"
-                style={{ transform: "translateZ(-100px)" }}
-              />
-            </div>
+            <motion.img 
+              src="/design.png" 
+              alt="SynthScope 3D Persona Card and Analytics Display with Rock Pedestal" 
+              className="relative z-20 w-full max-w-[680px] h-auto object-contain select-none cursor-pointer"
+              animate={{ 
+                y: [0, -12, 0],
+                rotateZ: [0, 0.5, -0.5, 0],
+                filter: [
+                  "drop-shadow(0 0 3px rgba(238, 205, 176, 0.9)) drop-shadow(0 0 3px rgba(222,184,150,0.6)) drop-shadow(0 35px 50px rgba(0,0,0,0.9))",
+                ]
+              }}
+            />
           </motion.div>
 
         </div>

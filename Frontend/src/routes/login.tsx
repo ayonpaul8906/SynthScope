@@ -63,7 +63,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-90vh">
       {/* Left decorative panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-16">
         {/* Ambient background */}
@@ -111,27 +111,6 @@ function LoginPage() {
               Generate high-fidelity personas, run automated surveys, and validate
               your product without recruiting a single real user.
             </p>
-
-            {/* Stats row */}
-            <div className="mt-12 flex gap-8">
-              {[
-                { label: "Personas Generated", value: "10K+" },
-                { label: "Survey Responses", value: "500K+" },
-                { label: "Teams Using", value: "200+" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div
-                    className="text-2xl font-bold text-white"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    {s.value}
-                  </div>
-                  <div className="text-[9px] font-mono uppercase tracking-wider text-[#6b6b78] mt-0.5">
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
           </motion.div>
         </div>
       </div>

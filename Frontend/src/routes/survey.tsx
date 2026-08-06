@@ -25,7 +25,7 @@ import { getAuthHeaders } from "@/lib/api-headers";
 
 export const Route = createFileRoute("/survey")({
   component: SurveyPage,
-  head: () => ({ meta: [{ title: "Survey Lab — SynthScope" }] }),
+  head: () => ({ meta: [{ title: "SynthScope" }] }),
 });
 
 type BackendPersona = {
@@ -291,12 +291,8 @@ function SurveyPage() {
         {/* Header Banner */}
         <div className="mb-10 flex flex-col justify-between gap-6 border-b border-white/[0.04] pb-8 md:flex-row md:items-end">
           <div>
-            <div className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-[#7f8084] flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              SURVEY LAB // SYNTHETIC USER AUDIT
-            </div>
             <h1 className="mt-3 text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight">
-              Survey Mode. <span className="font-editor font-light text-[#7f8084]">Consensus & feedback.</span>
+              Survey Mode <span className="font-editor font-light text-[#7f8084]"></span>
             </h1>
             <p className="mt-2 text-xs text-[#7f8084] max-w-xl">
               Audit synthetic user responses across target cohorts in real-time. Deployed prompts generate persistent database insights.

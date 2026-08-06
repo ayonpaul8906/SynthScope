@@ -7,3 +7,4 @@ SQLAlchemy
 psycopg[binary]
 alembic
 pydantic-settings
+fpdf2

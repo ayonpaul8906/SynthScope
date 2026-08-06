@@ -174,10 +174,6 @@ function PersonasPage() {
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-6 sm:px-10">
         <div className="border-b border-white/[0.05] pb-7 flex flex-col md:flex-row md:items-end justify-between gap-5">
           <div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#6b6b78] flex items-center gap-2 mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" />
-              VIRTUAL PANEL // SYNTHETIC AGENTS
-            </p>
             <h1
               className="text-5xl font-bold uppercase text-white leading-none"
               style={{ fontFamily: "var(--font-display)" }}

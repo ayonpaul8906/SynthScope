@@ -146,10 +146,6 @@ function CreateExperiment() {
       <div className="mx-auto max-w-7xl px-6 pt-10 pb-8 sm:px-10">
         <div className="flex items-end justify-between border-b border-white/[0.05] pb-7">
           <div>
-            <p className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#6b6b78] flex items-center gap-2 mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse" />
-              SYNTHESIS WORKSPACE // CONFIG
-            </p>
             <h1
               className="text-5xl font-bold uppercase text-white leading-none"
               style={{ fontFamily: "var(--font-display)" }}
@@ -158,9 +154,6 @@ function CreateExperiment() {
               <span className="text-[#6b6b78] ml-3 font-light text-4xl">Deploy panel.</span>
             </h1>
           </div>
-          <span className="text-[9px] font-mono text-[#6b6b78] tracking-wider">
-            SYNTHCORE // V3.1
-          </span>
         </div>
       </div>
 

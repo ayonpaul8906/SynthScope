@@ -53,34 +53,28 @@ export function getPremiumAvatar(name: string) {
 
 export function PremiumAvatar({ name, className = "" }: { name: string; className?: string }) {
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const colors = [
-    ["#e0c088", "#8c6f37"],
-    ["#38bdf8", "#0369a1"],
-    ["#818cf8", "#4338ca"],
-    ["#c084fc", "#6b21a8"],
-    ["#f472b6", "#be185d"],
-    ["#34d399", "#065f46"],
+  const avatars = [
+    "/avatars/m1.jpg",
+    "/avatars/m2.jpg",
+    "/avatars/m3.jpg",
+    "/avatars/m4.jpg",
+    "/avatars/w1.jpg",
+    "/avatars/w2.jpg",
+    "/avatars/w3.jpg",
+    "/avatars/w4.jpg",
   ];
-  const [c1, c2] = colors[hash % colors.length];
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const selectedAvatar = avatars[hash % avatars.length];
 
   return (
     <div
-      className={`relative overflow-hidden flex items-center justify-center font-display rounded-xl border border-white/10 ${className}`}
-      style={{
-        background: `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.15), 0 4px 12px rgba(0,0,0,0.3)`,
-      }}
+      className={`relative overflow-hidden flex items-center justify-center rounded-xl border border-white/15 shadow-[0_4px_12px_rgba(0,0,0,0.5)] bg-black/50 ${className}`}
     >
-      <div className="absolute inset-0 bg-white/[0.04] backdrop-blur-[0.5px]" />
-      <span className="relative z-10 text-white font-bold tracking-tight text-xs sm:text-sm animate-fade-in">
-        {initials}
-      </span>
+      <img
+        src={selectedAvatar}
+        alt={name}
+        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+      />
+      <div className="absolute inset-0 border border-[#deb896]/20 rounded-xl pointer-events-none" />
     </div>
   );
 }
