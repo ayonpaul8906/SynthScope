@@ -9,7 +9,7 @@ import {
 export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
-    meta: [{ title: "SynthScope — Premium Synthetic User Research" }],
+    meta: [{ title: "SynthScope" }],
   }),
 });
 
