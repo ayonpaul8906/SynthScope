@@ -1,0 +1,42 @@
+# Backend
+/Backend/.venv
+/Backend/__pycache__
+/Backend/.mypy_cache
+/Backend/.env
+
+# Frontend
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+/Frontend/node_modules
+/Frontend/dist
+/Frontend/dist-ssr
+/Frontend/.output
+/Frontend/.vinxi
+/Frontend/.tanstack/**
+/Frontend/.nitro
+/Frontend/*.local
+
+# Wrangler / Cloudflare
+/Frontend/.wrangler/
+/Frontend/.dev.vars
+
+# Editor directories and files
+/Frontend/.vscode/*
+/Frontend/!.vscode/extensions.json
+/Frontend/.idea
+/Frontend/.DS_Store
+/*.suo
+/*.ntvs*
+/*.njsproj
+/*.sln
+/*.sw?
+/Frontend/.env
+
