@@ -42,13 +42,7 @@ export function Navbar() {
           to="/"
           className="flex items-center gap-2.5 group"
         >
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-[#dfbe9f]/20 via-[#d6a07e]/30 to-[#9c6643]/20 border border-[#d6a07e]/50 flex items-center justify-center shadow-[0_0_12px_rgba(214,160,126,0.2)] group-hover:border-[#d6a07e] transition-all">
-            <svg className="w-4 h-4 text-[#d6a07e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </div>
+          <img src="/logo.png" alt="SynthScope Logo" className="w-10 h-10" />
           <span 
             className="text-base text-xl font-semibold tracking-wider text-[#d6a07e] transition-colors"
             style={{ fontFamily: "var(--font-display)" }}
